@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Asurada Wiki</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <!-- 引入本地 CSS -->
+  <link rel="stylesheet" href="lib/vue.css">
+</head>
+<body>
+  <div id="app">加载中...</div>
+  <script>
+    window.$docsify = {
+      name: 'Asurada Wiki',
+      repo: 'https://github.com/AsuradaGo/Wiki', // 可填入你的 GitHub 仓库地址
+      homepage: 'Wiki.md', // 默认首页；若不想重命名 Wiki.md，可改填 'Wiki.md'
+      loadSidebar: true,   // 如需侧边栏可设为 true 并创建 _sidebar.md
+      subMaxLevel: 3        // 自动根据 MD 标题生成层级目录
+    }
+  </script>
+  <!-- 引入本地 JS 及代码高亮插件 -->
+  <script src="lib/docsify.js"></script>
+  <script src="lib/prism-bash.js"></script>
+</body>
+</html>
