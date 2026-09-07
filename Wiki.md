@@ -105,14 +105,14 @@ cryptsetup open /dev/sda2 cryptlvm
 # 设置lvm（卷组名称dellinuxvg）
 1. 在打开的 LUKS 容器上创建物理卷(PV)
 pvcreate /dev/mapper/cryptlvm
-2. 创建卷组(VG)，命名为 dellinuxvg
-vgcreate dellinuxvg /dev/mapper/cryptlvm
+2. 创建卷组(VG)，命名为 dellvg
+vgcreate dellvg /dev/mapper/cryptlvm
 3. 创建逻辑卷(LV)，只创建一个 root
-lvcreate -l 100%FREE dellinuxvg -n dellinuxroot
+lvcreate -l 100%FREE dellvg -n dellroot
 # 格式化并挂载分区
 mkfs.fat -F32 /dev/sda1
-mkfs.ext4 /dev/dellinuxvg/dellinuxroot
-mount /dev/dellinuxvg/dellinuxroot /mnt
+mkfs.ext4 /dev/dellvg/dellroot
+mount /dev/dellvg/dellroot /mnt
 mount --mkdir /dev/sda1 /mnt/boot
 ```
 ### 配置 Pacman 镜像源
@@ -121,7 +121,7 @@ vim /etc/pacman.d/mirrorlist
 ```
 ### 安装基础系统
 ```bash
-pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms（+lvm2，对于采用lvm LUKS加密方案）
+pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms lvm2(对于采用lvm LUKS加密方案）
 ```
 ### 生成 fstab 文件
 ```bash
@@ -152,15 +152,15 @@ locale-gen
 ```bash
 echo 'your-hostname' > /etc/hostname
 passwd # 设置 Root 密码
-useradd -m asuraarch
-passwd asuraarch # 设置用户密码
+useradd -m asura
+passwd asura # 设置用户密码
 EDITOR=vim visudo # 配置 sudo
 ```
 ### 对于加密磁盘方案，配置 mkinitcpio.conf
 ```bash
 vim /etc/mkinitcpio.conf
 # 样式：
-HOOKS=(base systemd autodetect keyboard modconf block sd-encrypt lvm2 filesystems fsck)
+HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
 # 重新生成initramfs
 mkinitcpio -P
 ```
@@ -182,7 +182,7 @@ vim /boot/loader/entries/arch.conf
 title   Arch Linux
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
-options rd.luks.name=<UUID>=cryptlvm root=/dev/dellinuxvg/dellinuxroot rw
+options rd.luks.name=<UUID>=cryptlvm root=/dev/dellvg/dellroot rw
 ```
 ### 启用系统服务
 ```bash
@@ -245,7 +245,7 @@ sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-
 ### 普通用户加入sudo
 ```bash
 su -
-usermod -aG sudo asurada
+usermod -aG sudo asura
 ```
 ### Debin13 USTC sources.list
 ```bash
@@ -354,8 +354,12 @@ sudo apt install virtiofsd
 sudo pacman -S qemu-desktop virt-manager virt-viewer libvirt edk2-ovmf dnsmasq openbsd-netcat
 ---
 # 加入用户组
+# Debian
 sudo adduser $USER libvirt
 sudo adduser $USER kvm
+# Arch Linux
+sudo usermod -aG libvirt $USER
+sudo usermod -aG kvm $USER
 # 启动服务并设置开启自启动
 sudo systemctl enable --now libvirtd
 # 设置虚拟机网络自动启动
