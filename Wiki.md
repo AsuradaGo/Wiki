@@ -181,6 +181,7 @@ vim /boot/loader/entries/arch.conf
 # 写入：
 title   Arch Linux
 linux   /vmlinuz-linux
+initrd  /intel-ucode.img
 initrd  /initramfs-linux.img
 options rd.luks.name=<UUID>=cryptlvm root=/dev/dellvg/dellroot rw
 ```
