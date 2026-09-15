@@ -100,18 +100,15 @@ gdisk /dev/sda
 2. 设置LUKS加密容器
 # 格式化LUKS分区
 cryptsetup luksFormat /dev/sda2
-# 打开LUKS容器，命名为cryptlvm
+# 打开LUKS容器
 cryptsetup open /dev/sda2 cryptlvm
-# 设置lvm（卷组名称dellinuxvg）
-1. 在打开的 LUKS 容器上创建物理卷(PV)
+# 设置lvm
 pvcreate /dev/mapper/cryptlvm
-2. 创建卷组(VG)，命名为 dellvg
-vgcreate dellvg /dev/mapper/cryptlvm
-3. 创建逻辑卷(LV)，只创建一个 root
-lvcreate -l 100%FREE dellvg -n dellroot
+vgcreate macvg /dev/mapper/cryptlvm
+lvcreate -l 100%FREE macvg -n macroot
 # 格式化并挂载分区
 mkfs.fat -F32 /dev/sda1
-mkfs.ext4 /dev/dellvg/dellroot
+mkfs.ext4 /dev/macvg/macroot
 mount /dev/dellvg/dellroot /mnt
 mount --mkdir /dev/sda1 /mnt/boot
 ```
@@ -150,10 +147,10 @@ locale-gen
 ```
 ### 主机名与用户
 ```bash
-echo 'your-hostname' > /etc/hostname
+echo 'macarch' > /etc/hostname
 passwd # 设置 Root 密码
-useradd -m asura
-passwd asura # 设置用户密码
+useradd -m asurada
+passwd asurada # 设置用户密码
 EDITOR=vim visudo # 配置 sudo
 ```
 ### 对于加密磁盘方案，配置 mkinitcpio.conf
@@ -333,7 +330,7 @@ Defaults env_reset,timestamp_timeout=60
 ```
 ## 配置/swapfile 文件
 ```
-sudo fallocate -l 4G /swapfile
+sudo fallocate -l 8G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
