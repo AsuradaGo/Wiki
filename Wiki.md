@@ -157,7 +157,7 @@ EDITOR=vim visudo # 配置 sudo
 ```bash
 vim /etc/mkinitcpio.conf
 # 样式：
-HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt sd-lvm2) filesystems fsck)
+HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
 # 重新生成initramfs
 mkinitcpio -P
 ```
