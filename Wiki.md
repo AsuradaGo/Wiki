@@ -147,7 +147,7 @@ locale-gen
 ```
 ### 主机名与用户
 ```bash
-echo 'macarch' > /etc/hostname
+echo 'arch' > /etc/hostname
 passwd # 设置 Root 密码
 useradd -m asurada
 passwd asurada # 设置用户密码
@@ -172,6 +172,11 @@ grub-mkconfig -o /boot/grub/grub.cfg
 安装systemd-boot到boot分区
 ```bash
 bootctl install
+vim /boot/loader/loader.conf
+default  arch.conf
+timeout  3
+console-mode max
+editor   no
 # 获取UUID
 blkid /dev/sda2
 vim /boot/loader/entries/arch.conf
@@ -206,129 +211,21 @@ cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto
 Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch
 Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
 Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch
-Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch
 Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch
+Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch
 ```
-### NVIDIA驱动（930M）
-```bash
-sudo pacman -S git base-devel
-git clone https://aur.archlinux.org/nvidia-580xx-utils.git
-cd nvidia-580xx-utils
-makepkg -si
-```
-### 虚拟机进一步配置 (Optional)
-#### VMware 配置
-```bash
-sudo pacman -S open-vm-tools gtkmm3
-sudo systemctl enable vmtoolsd vmware-vmblock-fuse
-```
-**注意**: 开启 Vmware 3D 图形支持，分配内存 4G。
-#### Hyper-V 配置
-```bash
-sudo pacman -S hyperv
-sudo systemctl enable hv_kvp_daemon.service hv_vss_daemon.service
-```
-**网络配置 (网络列表混乱需重新绑定)**
-```bash
-nmcli device # 列出所有连接配置文件
-sudo nmcli connection delete OutNet # 删除现有配置
-sudo nmcli connection add type ethernet con-name InNet ifname ens37
-sudo nmcli connection add type ethernet con-name OutNet ifname ens37
-sudo systemctl restart NetworkManager
 ### Fcitx5输入法
 ```bash
 sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-qt
 ```
-## Debian13简单配置
-### 普通用户加入sudo
-```bash
-su -
-usermod -aG sudo asura
-```
-### Debin13 USTC sources.list
-```bash
-sudo nano /etc/apt/sources.list
-# USTC
-deb http://mirrors.ustc.edu.cn/debian trixie main contrib non-free non-free-firmware
-# deb-src http://mirrors.ustc.edu.cn/debian trixie main contrib non-free non-free-firmware
-deb http://mirrors.ustc.edu.cn/debian trixie-updates main contrib non-free non-free-firmware
-# deb-src http://mirrors.ustc.edu.cn/debian trixie-updates main contrib non-free non-free-firmware
-# backports
-# deb http://mirrors.ustc.edu.cn/debian trixie-backports main contrib non-free non-free-firmware
-# deb-src http://mirrors.ustc.edu.cn/debian trixie-backports main contrib non-free non-free-firmware
-# Security
-deb http://mirrors.ustc.edu.cn/debian-security/ trixie-security main contrib non-free non-free-firmware
-# deb-src http://mirrors.ustc.edu.cn/debian-security/ trixie-security main contrib non-free non-free-firmware
-```
-### 配置TPM自动解锁
-```bash
-# 确定加密分区
-sudo lsblk -f
-# 清除旧信息
-sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/sda3
-# 安装clevis组件
-sudo apt install clevis clevis-tpm2 clevis-luks clevis-initramfs
-# 执行绑定
-sudo clevis luks bind -d /dev/sda3 tpm2 '{"pcr_ids":"7"}'
-# 更新 initramfs
-sudo update-initramfs -u -k all
-```
-### 配置NVIDIA驱动
-```bash
-# 先行安装的条件
-sudo apt install linux-headers-$(uname -r) dkms build-essential
-# 安装NVIDIA包
-sudo apt install nvidia-driver
-```
-### Dell鼠标/触摸板配置
-psmouse serio1: Failed to enable mouse on isa0060/serio1
-```bash
-sudo nano /etc/default/grub
-# 在 GRUB_CMDLINE_LINUX_DEFAULT 这一行，在引号内的末尾添加 i8042.nopnp=1 参数：
-GRUB_CMDLINE_LINUX_DEFAULT="quiet i8042.nopnp=1"
-# 更新grub
-sudo update-grub
-```
-## Oracle服务器
-### SSH 连接
-```bash
-# 通用连接
-ssh -i ~/Oracle9092.key username@Public_IP
-# 修改ssh默认端口
-sudo nano /etc/ssh/sshd_config
-找到：
-#Port 22
-把它改成（去掉 # 并修改端口号）：
-Port xx
-# Android连接 (Termux)
-termux-change-repo
-termux-setup-storage
-pkg upgrade
-ssh -i "Oracle.Key路径:~/storage/downloads/Oracle9092.key" username@Public_IP
-```
-### 安装xfce桌面与远程桌面
-```bash
-sudo apt install xfce4 xfce4-goodies xrdp fonts-noto-cjk fcitx5 fcitx5-chinese-addons fcitx5-frontend-gtk3 fcitx5-frontend-qt5 fcitx5-config-qt
-sudo systemctl enable xrdp
-sudo adduser xrdp ssl-cert
-echo "xfce4-session" > ~/.xsession
-sudo passwd debian
-```
-### 设置中文语言
-```bash
-sudo vim /etc/locale.gen
-# 取消注释 en_US.UTF-8 和 zh_CN.UTF-8
-sudo locale-gen
-sudo update-locale LANG=zh_CN.UTF-8
-```
-## sudo免密时间长度
+### sudo免密时间长度
 ```bash
 # 使用visudo编辑
 EDITOR=vim visudo
 # 添加内容，表示60分钟内免密执行
 Defaults env_reset,timestamp_timeout=60
 ```
-## 配置/swapfile 文件
+### 配置/swapfile 文件
 ```
 sudo fallocate -l 8G /swapfile
 sudo chmod 600 /swapfile
@@ -336,26 +233,14 @@ sudo mkswap /swapfile
 sudo swapon /swapfile
 sudo swapon --show
 sudo nano /etc/fstab
-#Debian
-# /swapfile
-/swapfile none swap sw 0 0
-# Arch Linux
 # /swapfile
 /swapfile none swap defaults 0 0
 ```
-## 安装kvm/qemu虚拟机
+### KVM/QEMU虚拟机
 ```bash
-# Debian
-sudo apt install qemu-system-x86 libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager
-sudo apt install virtiofsd
-# Arch Linux
 sudo pacman -S qemu-desktop virt-manager virt-viewer libvirt edk2-ovmf dnsmasq openbsd-netcat
 ---
 # 加入用户组
-# Debian
-sudo adduser $USER libvirt
-sudo adduser $USER kvm
-# Arch Linux
 sudo usermod -aG libvirt $USER
 sudo usermod -aG kvm $USER
 # 启动服务并设置开启自启动
@@ -381,15 +266,8 @@ Tab_Virtiofs /mnt/sharefolder  virtiofs          rw,noatime,nofail,x-systemd.aut
 mkdir -p /sharefolder   # 创建挂载点
 sudo mount -t virtiofs sharehost ~/sharefolder
 ```
-## 安装OpenVPN
-```bash
-# Debian
-sudo apt install network-manager-openvpn
-# Arch Linux
-sudo pacman -S networkmanager-openvpn
-```
-## 磁盘相关操作
-### 加密设备挂载/卸载
+### 磁盘操作
+加密设备挂载/卸载
 ```bash
 # 挂载设备
 mkdir -p ~/mount
@@ -399,29 +277,26 @@ sudo mount /dev/mapper/sdcard ~/mount
 sudo umount ~/mount
 sudo cryptsetup luksClose sdcard
 # 权限设置
-sudo chown -R adurada:asurada ~/TestFolder
+sudo chown -R username:username ~/TestFolder
 # 断开设备电源
 sudo udisksctl power-off -b /dev/sdx
 ```
-### smartctl查看磁盘健康状态
+smartctl查看磁盘健康状态
 ```bash
+sudo pacman -S smar?tool
 sudo smartctl -H /dev/sda
 sudo smartctl -a /dev/sda
 ```
-## Docker
-### Docker安装
+### Docker
+#### Docker安装
 ```bash
-# Arch Linux
 sudo pacman -S docker
 sudo systemctl start docker
 sudo systemctl enable docker.socket
-# Debian
-curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
-sudo systemctl enable --now docker
-# 用户加入Docker组
-sudo usermod -aG docker $USER
+# 加入组
+usermod xxxx
 ```
-### Docker基础操作
+#### Docker基础操作
 彻底删除某个 Compose 项目
 ```bash
 cd ＂docker项目目录＂
@@ -431,8 +306,8 @@ docker volume ls
 # 删除项目文件
 rm -rf ~/docker/项目文件夹名称 
 ```
-## 常用Docker项目部署
-### Docker-OpenVPN
+### 常用Docker项目部署
+#### Docker-OpenVPN
 ```bash
 # 开启 IP 转发
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/net_openvpn.conf
@@ -451,7 +326,7 @@ docker run -d \
 docker exec openvpn ovpn_manage --addclient Oracle02 # 新建OpenVPN客户端文件
 docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn . # 从docker复制文件到主机目录
 ```
-### Docker-Alist
+#### Docker-Alist
 ```bash
 mkdir -p ~/docker/alist # 创建项目目录
 docker run -d \
@@ -463,7 +338,7 @@ xhofe/alist:latest
 # 设置密码
 sudo docker exec -it alist ./alist admin set your-password
 ```
-### Docker-Aria2
+#### Docker-Aria2
 ```bash
 mkdir -p ~/docker/aria2/config # 创建项目目录
 docker run -d \
@@ -478,7 +353,7 @@ docker run -d \
 -v ~/docker/aria2/:/downloads \
 p3terx/aria2-pro
 ```
-### Docker-Code-Server(Web Coding)
+#### Docker-Code-Server(Web Coding)
 ```bash
 mkdir -p ~/docker/code-server #创建项目目录
 docker run -d \
@@ -492,7 +367,7 @@ docker run -d \
 -e PASSWORD="your-password" \
 lscr.io/linuxserver/code-server:latest
 ```
-### Docker-Chromium
+#### Docker-Chromium
 ```bash
 mkdir -p ~/docker/chromium # 创建项目目录
 docker run -d \
@@ -506,24 +381,7 @@ docker run -d \
 --restart unless-stopped \
 lscr.io/linuxserver/chromium:latest
 ```
-### Metasploit
-```bash
-mkdir -p ~/docker/metasploit
-docker run -it -d \
---name metasploit \
---net=host \
--v ~/docker/metasploit:/root/.msf4 \
-metasploitframework/metasploit-framework
-# 预先在 PostgreSQL 中创建数据库
-docker exec -it postgresql psql -U postgres
-# CREATE USER user_msf WITH PASSWORD 'password';
-# CREATE DATABASE data_msf OWNER user_msf;
-# 连接 msf 并手动连接数据库
-docker exec -it metasploit msfconsole
-# db_connect user_msf:password@127.0.0.1:5432/data_msf
-# db_status
-```
-### Docker-NetData (监控面板)
+#### Docker-NetData (监控面板)
 ```bash
 mkdir -p ~/docker/netdata #创建项目目录
 docker run -d \
@@ -551,7 +409,24 @@ netdata/netdata:stable
 # 访问
 `http://10.8.0.1:19999`
 ```
-### PostgreSQL
+#### Metasploit
+```bash
+mkdir -p ~/docker/metasploit
+docker run -it -d \
+--name metasploit \
+--net=host \
+-v ~/docker/metasploit:/root/.msf4 \
+metasploitframework/metasploit-framework
+# 预先在 PostgreSQL 中创建数据库
+docker exec -it postgresql psql -U postgres
+# CREATE USER user_msf WITH PASSWORD 'password';
+# CREATE DATABASE data_msf OWNER user_msf;
+# 连接 msf 并手动连接数据库
+docker exec -it metasploit msfconsole
+# db_connect user_msf:password@127.0.0.1:5432/data_msf
+# db_status
+```
+#### PostgreSQL
 ```bash
 mkdir -p ~/docker/postgresql # 创建项目目录
 docker run -d \
@@ -598,57 +473,50 @@ CREATE INDEX idx_phone ON table_2026("phone");
 CREATE INDEX idx_uid ON table_2026("uid");
 # 查询: SELECT * FROM table_2026 WHERE "phone" = 'Your Phone';
 ```
-## yay
+### yay
 ```bash
-# Arch Linux
-sudo pacman -S git base-devel #如果未安装需提前安装
+sudo pacman -S git base-devel # 如果未安装需提前安装
 cd ~
 git clone https://aur.archlinux.org/yay-bin.git
 cd yay-bin
 makepkg -si
 ```
-## Google Chrome
+### Google Chrome
 ```bash
-# Arch Linux
 yay -S google-chrome
 ```
-## Chromium
+### Chromium
 ```bash
-# Debian
-sudo apt install chromium chromium-l10n
-# Arch Linux
 sudo pacman -S chromium
 ```
-## Fcitx5
+### Fcitx5
 ```bash
-# Arch Linux
 sudo pacman -S fcitx5 fcitx5-configtool fcitx5-qt fcitx5-gtk fcitx5-chinese-addons
 ```
-## Kwallet
+### Kwallet
 建议设置空密码
-## crunch
+### crunch
 ```bash
 yay -S crunch
 ```
-## swaks
+### swaks
 ```bash
 sudo pacman -S swaks
 ```
-## hashcat
+### hashcat
 ```bash
 yay hashcat
 ```
-## wireshark
+### wireshark
 ```bash
 yay wireshark
 ```
-## nmap
+### nmap
 ```bash
 sudo pacman -S nmap
 ```
-## Aircrack-NG
+### Aircrack-NG
 ```bash
-# Arch Linux
 yay -S aircrack-ng
 ifconfig                      # 查看当前网卡
 sudo airmon-ng                # 查看外接网卡
@@ -661,7 +529,7 @@ aircrack-ng xxx.cap -w 字典路径 # 字典破解
 sudo iw dev wls35u1mon set type managed # 停止监听模式 (推荐)
 sudo airmon-ng stop wls35u1mon # 不推荐，遇到网卡、内核和桌面崩溃
 ```
-## 手机 USB 共享网络
+### 手机 USB 共享网络
 ```bash
 ip a                     # 查看设备接口
 ip link set <接口名> up   # 启用接口
@@ -670,11 +538,79 @@ ping debian.org -c 3     # 验证网络
 ip route show            # 查看路由
 ip route del default via 192.168.100.1 # 删除无效路由:
 ```
-## 查看系统内核/硬件日志
+### 查看系统内核/硬件日志
 ```bash
 sudo dmesg | tail -n 50
 # 从内核日志中，过滤并高亮显示与 sda 硬盘、SATA 接口、错误（error）或失败（fail）相关的关键日志
 sudo dmesg | grep -i -E "sda|ata|error|fail"
+```
+## Oracle-VPS Debian
+### SSH 连接
+```bash
+# 通用连接
+ssh -i ~/Oracle9092.key username@Public_IP
+# Android连接 (Termux)
+termux-change-repo
+termux-setup-storage
+pkg upgrade
+ssh -i "Oracle.Key路径:~/storage/downloads/Oracle9092.key" username@Public_IP
+```
+### 安装xfce桌面与远程桌面
+```bash
+sudo apt install xfce4 xfce4-goodies xrdp fonts-noto-cjk fcitx5 fcitx5-chinese-addons fcitx5-frontend-gtk3 fcitx5-frontend-qt5 fcitx5-config-qt
+sudo systemctl enable xrdp
+sudo adduser xrdp ssl-cert
+echo "xfce4-session" > ~/.xsession
+sudo passwd debian
+```
+### 设置中文语言
+```bash
+sudo vim /etc/locale.gen
+# 取消注释 en_US.UTF-8 和 zh_CN.UTF-8
+sudo locale-gen
+sudo update-locale LANG=zh_CN.UTF-8
+```
+### 普通用户加入sudo
+```bash
+su -
+usermod -aG sudo asura
+```
+### Debin13 USTC sources.list
+```bash
+sudo nano /etc/apt/sources.list
+# USTC
+deb http://mirrors.ustc.edu.cn/debian trixie main contrib non-free non-free-firmware
+# deb-src http://mirrors.ustc.edu.cn/debian trixie main contrib non-free non-free-firmware
+deb http://mirrors.ustc.edu.cn/debian trixie-updates main contrib non-free non-free-firmware
+# deb-src http://mirrors.ustc.edu.cn/debian trixie-updates main contrib non-free non-free-firmware
+# backports
+# deb http://mirrors.ustc.edu.cn/debian trixie-backports main contrib non-free non-free-firmware
+# deb-src http://mirrors.ustc.edu.cn/debian trixie-backports main contrib non-free non-free-firmware
+# Security
+deb http://mirrors.ustc.edu.cn/debian-security/ trixie-security main contrib non-free non-free-firmware
+# deb-src http://mirrors.ustc.edu.cn/debian-security/ trixie-security main contrib non-free non-free-firmware
+```
+### 配置TPM自动解锁
+```bash
+# 确定加密分区
+sudo lsblk -f
+# 清除旧信息
+sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/sda3
+# 安装clevis组件
+sudo apt install clevis clevis-tpm2 clevis-luks clevis-initramfs
+# 执行绑定
+sudo clevis luks bind -d /dev/sda3 tpm2 '{"pcr_ids":"7"}'
+# 更新 initramfs
+sudo update-initramfs -u -k all
+```
+### Debian安装Docker
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
+sudo systemctl enable --now docker
+# 用户加入Docker组
+sudo usermod -aG docker $USER
+### Debian安装chromium
+sudo apt install chromium chromium-l10n
 ```
 # Windows系统相关
 ## 系统设置
