@@ -107,9 +107,9 @@ pvcreate /dev/mapper/cryptlvm
 vgcreate macvg /dev/mapper/cryptlvm
 lvcreate -l 100%FREE macvg -n macroot
 # 格式化并挂载分区
-mkfs.fat -F32 /dev/sda1
+mkfs.fat -F 32 /dev/sda1
 mkfs.ext4 /dev/macvg/macroot
-mount /dev/dellvg/dellroot /mnt
+mount /dev/macvg/macroot /mnt
 mount --mkdir /dev/sda1 /mnt/boot
 ```
 ### 配置 Pacman 镜像源
