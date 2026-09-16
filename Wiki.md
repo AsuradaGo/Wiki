@@ -118,7 +118,7 @@ vim /etc/pacman.d/mirrorlist
 ```
 ### 安装基础系统
 ```bash
-pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms lvm2(对于采用lvm LUKS加密方案）
+pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms lvm2 cryptsetup(对于采用lvm LUKS加密方案）
 ```
 ### 生成 fstab 文件
 ```bash
@@ -157,7 +157,7 @@ EDITOR=vim visudo # 配置 sudo
 ```bash
 vim /etc/mkinitcpio.conf
 # 样式：
-HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
+HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt sd-lvm2) filesystems fsck)
 # 重新生成initramfs
 mkinitcpio -P
 ```
