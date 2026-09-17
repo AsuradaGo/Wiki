@@ -114,12 +114,13 @@ mount --mkdir /dev/sda1 /mnt/boot
 ### 配置镜像源
 ```bash
 vim /etc/pacman.d/mirrorlist
-Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch
+```
+> Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch
 Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
 Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch
 Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch
 Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch
-```
+
 ### 安装基础系统
 ```bash
 pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms lvm2 cryptsetup(对于采用lvm LUKS加密方案）
