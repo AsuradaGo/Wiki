@@ -237,7 +237,6 @@ sudo swapon --show
 sudo nano /etc/fstab
 ```
 >
-# /swapfile
 /swapfile none swap defaults 0 0
 ### MacBookPro优化
 #### 电源管理
