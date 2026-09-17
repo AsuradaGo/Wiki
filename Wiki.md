@@ -114,7 +114,7 @@ mount --mkdir /dev/sda1 /mnt/boot
 ### 配置镜像源
 ```bash
 vim /etc/pacman.d/mirrorlist
-> Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch
+Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch
 Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
 Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch
 Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch
@@ -160,10 +160,10 @@ EDITOR=vim visudo # 配置 sudo
 ### 配置 mkinitcpio.conf（采用磁盘加密方案按需配置）
 ```bash
 vim /etc/mkinitcpio.conf
-> HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
 # 重新生成initramfs
 mkinitcpio -P
 ```
+> HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
 ### 配置引导
 1. 不加密磁盘方案采用GRUB引导
 ```bash
