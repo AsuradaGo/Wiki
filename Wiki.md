@@ -165,7 +165,8 @@ vim /etc/mkinitcpio.conf
 # 重新生成initramfs
 mkinitcpio -P
 ```
-> HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
+>
+HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
 ### 配置引导
 1. 不加密磁盘方案采用GRUB引导
 ```bash
@@ -178,20 +179,24 @@ grub-mkconfig -o /boot/grub/grub.cfg
 ```bash
 bootctl install
 vim /boot/loader/loader.conf
-> default  arch.conf
+```
+>
+default  arch.conf
 timeout  3
 console-mode max
 editor   no
+```bash
 # 获取UUID
 blkid /dev/sda2
 vim /boot/loader/entries/arch.conf
-# 写入：
+# 写入
+```
+>
 title   Arch Linux
 linux   /vmlinuz-linux
 initrd  /intel-ucode.img
 initrd  /initramfs-linux.img
 options rd.luks.name=<UUID>=cryptlvm root=/dev/dellvg/dellroot rw
-```
 ### 启用系统服务
 ```bash
 systemctl enable plasmalogin
@@ -203,25 +208,25 @@ exit
 umount -R /mnt
 ```
 ### 配置TPM自动解锁
-将 TPM 与 LUKS 分区绑定
 ```bash
 sudo systemd-cryptenroll --tpm2-device=auto /dev/sda2
-vim /etc/crypttab   # 找到对应 cryptlvm 的那一行（如果没有，需要手动创建它），并在其选项末尾添加 tpm2-device=auto :
+vim /etc/crypttab
+```
+>
+找到对应 cryptlvm 的那一行（如果没有，需要手动创建它），并在其选项末尾添加 tpm2-device=auto :
 cryptlvm UUID=your-luks-uuid none discard
 改为：
 cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto
-```
 ### Fcitx5输入法
 ```bash
 sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-qt
 ```
 ### sudo免密时间长度
 ```bash
-# 使用visudo编辑
 EDITOR=vim visudo
-# 添加内容，表示60分钟内免密执行
-> Defaults env_reset,timestamp_timeout=60
 ```
+>
+Defaults env_reset,timestamp_timeout=60
 ### 配置/swapfile 文件
 ```
 sudo fallocate -l 8G /swapfile
@@ -230,8 +235,29 @@ sudo mkswap /swapfile
 sudo swapon /swapfile
 sudo swapon --show
 sudo nano /etc/fstab
+```
+>
 # /swapfile
-> /swapfile none swap defaults 0 0
+/swapfile none swap defaults 0 0
+### MacBookPro优化
+#### 电源管理
+```bash
+sudo pacman -S tlp tlp-rdw
+yay -S mbpfan-git
+sudo systemctl enable --now tlp
+sudo systemctl enable --now mbpfan
+```
+#### 声卡
+```bash
+sudo pacman -S alsa-utils
+sudo pacman -S pipewire-pulse pipewire-alsa
+systemctl --user enable --now pipewire-pulse.service
+alsamixer
+```
+#### 蓝牙
+```bash
+sudo pacman -S bluedevil bluez、bluez-utils
+sudo systemctl enable --now bluetooth.service
 ```
 ### KVM/QEMU虚拟机
 #### 安装KVM/QEMU
@@ -255,9 +281,9 @@ sudo virsh net-autostart default
 3. 自动挂载配置
 ```bash
 vim /etc/fstab
-# <挂载标签> <挂载点>  <文件系统类型>  <挂载选项>                                <dump> <pass>
-Tab_Virtiofs /mnt/sharefolder  virtiofs          rw,noatime,nofail,x-systemd.automount 0 0
 ```
+>
+Tab_Virtiofs /mnt/sharefolder  virtiofs          rw,noatime,nofail,x-systemd.automount 0 0
 4. 手动挂载
 ```bash
 mkdir -p /ShareFolder   # 创建挂载点
@@ -300,7 +326,7 @@ sudo systemctl enable docker.socket
 usermod xxxx
 ```
 #### Docker基础操作
-彻底删除某个 Compose 项目
+1. 彻底删除某个 Compose 项目
 ```bash
 cd ＂docker项目目录＂
 docker compose down -v --rmi all --remove-orphans
