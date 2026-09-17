@@ -63,13 +63,14 @@ iwctl station wlan0 connect "WiFi名称"
 ```bash
 timedatectl
 ```
-### 创建硬盘分区
-彻底清除磁盘分区信息
+### 硬盘分区
+1. 清除磁盘
 ```bash
 wipefs -a /dev/sda
 blkdiscard /dev/sda
+待补充完善
 ```
-#### 不加密磁盘分区方案
+2. 不采用加密分区方案
 ```bash
 gdisk /dev/sda
 # 输入: x (进入专家模式)
@@ -86,9 +87,8 @@ mkfs.ext4 /dev/sda2       # 系统根分区
 mount /dev/sda2 /mnt
 mount --mkdir /dev/sda1 /mnt/boot
 ```
-#### 加密磁盘分区方案
+3. 加密分区方案
 ```bash
-1. gdisk创建分区
 lsblk
 gdisk /dev/sda
 # 输入: x (进入专家模式)
@@ -97,10 +97,9 @@ gdisk /dev/sda
 # 输入: n (创建新分区，hex code ef00)
 # 输入: n (余下所有空间 hex code 8309）
 # 输入: w (写入磁盘更改)
-2. 设置LUKS加密容器
 # 格式化LUKS分区
 cryptsetup luksFormat /dev/sda2
-# 打开LUKS容器
+# 打开LUKS
 cryptsetup open /dev/sda2 cryptlvm
 # 设置lvm
 pvcreate /dev/mapper/cryptlvm
@@ -112,9 +111,14 @@ mkfs.ext4 /dev/macvg/macroot
 mount /dev/macvg/macroot /mnt
 mount --mkdir /dev/sda1 /mnt/boot
 ```
-### 配置 Pacman 镜像源
+### 配置镜像源
 ```bash
 vim /etc/pacman.d/mirrorlist
+> Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch
+Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
+Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch
+Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch
+Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch
 ```
 ### 安装基础系统
 ```bash
@@ -123,7 +127,7 @@ pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-de
 ### 生成 fstab 文件
 ```bash
 genfstab -U /mnt > /mnt/etc/fstab
-cat /mnt/etc/fstab  # 检查文件
+cat /mnt/etc/fstab  # 检查fstab文件
 ```
 ### chroot进入新系统
 ```bash
@@ -138,26 +142,25 @@ pacman -S plasma-login-manager plasma-desktop kwalletmanager kscreen krdp konsol
 ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 hwclock --systohc
 ```
-### 区域与本地化
+### locale和hostname设置
 ```bash
 vim /etc/locale.gen
 # 取消注释: en_US.UTF-8 UTF-8 和 zh_CN.UTF-8 UTF-8
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+echo 'arch' > /etc/hostname
 locale-gen
 ```
-### 主机名与用户
+### 用户配置
 ```bash
-echo 'arch' > /etc/hostname
 passwd # 设置 Root 密码
 useradd -m asurada
 passwd asurada # 设置用户密码
 EDITOR=vim visudo # 配置 sudo
 ```
-### 对于加密磁盘方案，配置 mkinitcpio.conf
+### 配置 mkinitcpio.conf（采用磁盘加密方案按需配置）
 ```bash
 vim /etc/mkinitcpio.conf
-# 样式：
-HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
+> HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
 # 重新生成initramfs
 mkinitcpio -P
 ```
@@ -173,7 +176,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 ```bash
 bootctl install
 vim /boot/loader/loader.conf
-default  arch.conf
+> default  arch.conf
 timeout  3
 console-mode max
 editor   no
@@ -206,14 +209,6 @@ cryptlvm UUID=your-luks-uuid none discard
 改为：
 cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto
 ```
-### 镜像源 (MirrorList)
-```bash
-Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch
-Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
-Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch
-Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch
-Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch
-```
 ### Fcitx5输入法
 ```bash
 sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-qt
@@ -223,7 +218,7 @@ sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-
 # 使用visudo编辑
 EDITOR=vim visudo
 # 添加内容，表示60分钟内免密执行
-Defaults env_reset,timestamp_timeout=60
+> Defaults env_reset,timestamp_timeout=60
 ```
 ### 配置/swapfile 文件
 ```
@@ -234,9 +229,10 @@ sudo swapon /swapfile
 sudo swapon --show
 sudo nano /etc/fstab
 # /swapfile
-/swapfile none swap defaults 0 0
+> /swapfile none swap defaults 0 0
 ```
 ### KVM/QEMU虚拟机
+#### 安装KVM/QEMU
 ```bash
 sudo pacman -S qemu-desktop virt-manager virt-viewer libvirt edk2-ovmf dnsmasq openbsd-netcat
 ---
@@ -249,25 +245,30 @@ sudo systemctl enable --now libvirtd
 sudo virsh net-list --all
 sudo virsh net-autostart default
 ```
-KVM虚拟机与宿主机传输文件（virtiofs）
-前提条件
+#### KVM虚拟机与宿主机传输文件（virtiofs）
 - 虚拟机已关闭
 - 宿主机为 Linux 系统
 1. 打开 `virt-manager`，选择目标虚拟机，点击 **"打开"** 进入详情界面--内存，勾选共享内存
-2. 点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `sharedhost`
+2. 点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `SharedHost`
 3. 自动挂载配置
 ```bash
 vim /etc/fstab
 # <挂载标签> <挂载点>  <文件系统类型>  <挂载选项>                                <dump> <pass>
 Tab_Virtiofs /mnt/sharefolder  virtiofs          rw,noatime,nofail,x-systemd.automount 0 0
 ```
-3. 手动挂载
+4. 手动挂载
 ```bash
-mkdir -p /sharefolder   # 创建挂载点
+mkdir -p /ShareFolder   # 创建挂载点
 sudo mount -t virtiofs sharehost ~/sharefolder
 ```
 ### 磁盘操作
-加密设备挂载/卸载
+1. 清除磁盘
+```bash
+wipefs -a /dev/sda
+blkdiscard /dev/sda
+待补充完善
+```
+2. 加密设备挂载/卸载
 ```bash
 # 挂载设备
 mkdir -p ~/mount
@@ -281,7 +282,7 @@ sudo chown -R username:username ~/TestFolder
 # 断开设备电源
 sudo udisksctl power-off -b /dev/sdx
 ```
-smartctl查看磁盘健康状态
+3. smartctl查看磁盘健康状态
 ```bash
 sudo pacman -S smar?tool
 sudo smartctl -H /dev/sda
