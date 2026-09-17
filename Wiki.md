@@ -115,11 +115,12 @@ mount --mkdir /dev/sda1 /mnt/boot
 ```bash
 vim /etc/pacman.d/mirrorlist
 ```
-> Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch
-Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
-Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch
-Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch
-Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch
+>
+Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch  
+Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch  
+Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch  
+Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch  
+Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch  
 
 ### 安装基础系统
 ```bash
