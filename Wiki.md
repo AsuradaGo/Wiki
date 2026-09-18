@@ -66,13 +66,13 @@ timedatectl
 ### 硬盘分区
 1. 清除磁盘
 ```bash
-wipefs -a /dev/sda
-blkdiscard /dev/sda
+wipefs -a /dev/sdx
+blkdiscard /dev/sdx
 待补充完善
 ```
 2. 不采用加密分区方案
 ```bash
-gdisk /dev/sda
+gdisk /dev/sdx
 # 输入: x (进入专家模式)
 # 输入: z (清空所有分区表)
 # 输入: o (创建 GPT 分区格式)
@@ -81,16 +81,16 @@ gdisk /dev/sda
 # 输入: p (查看分区情况)
 # 输入: w (写入磁盘更改)
 # 格式化分区
-mkfs.fat -F 32 /dev/sda1  # EFI 分区
-mkfs.ext4 /dev/sda2       # 系统根分区
+mkfs.fat -F 32 /dev/sdx1  # EFI 分区
+mkfs.ext4 /dev/sdx2       # 系统根分区
 # 挂载分区
-mount /dev/sda2 /mnt
-mount --mkdir /dev/sda1 /mnt/boot
+mount /dev/sdx2 /mnt
+mount --mkdir /dev/sdx1 /mnt/boot
 ```
 3. 加密分区方案
 ```bash
 lsblk
-gdisk /dev/sda
+gdisk /dev/sdx
 # 输入: x (进入专家模式)
 # 输入: z (清空所有分区表)
 # 输入: o (创建 GPT 分区格式)
@@ -98,30 +98,29 @@ gdisk /dev/sda
 # 输入: n (余下所有空间 hex code 8309）
 # 输入: w (写入磁盘更改)
 # 格式化LUKS分区
-cryptsetup luksFormat /dev/sda2
+cryptsetup luksFormat /dev/sdx2
 # 打开LUKS
-cryptsetup open /dev/sda2 cryptlvm
+cryptsetup open /dev/sdx2 cryptlvm
 # 设置lvm
 pvcreate /dev/mapper/cryptlvm
 vgcreate macvg /dev/mapper/cryptlvm
 lvcreate -l 100%FREE macvg -n macroot
 # 格式化并挂载分区
-mkfs.fat -F 32 /dev/sda1
+mkfs.fat -F 32 /dev/sdx1
 mkfs.ext4 /dev/macvg/macroot
 mount /dev/macvg/macroot /mnt
-mount --mkdir /dev/sda1 /mnt/boot
+mount --mkdir /dev/sdx1 /mnt/boot
 ```
 ### 配置镜像源
 ```bash
 vim /etc/pacman.d/mirrorlist
 ```
 >
-Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch  
-Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch  
-Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch  
 Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch  
 Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch  
-
+Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch  
+Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch  
+Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch    
 ### 安装基础系统
 ```bash
 pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms lvm2 cryptsetup(对于采用lvm LUKS加密方案）
@@ -181,22 +180,22 @@ bootctl install
 vim /boot/loader/loader.conf
 ```
 >
-default  arch.conf
-timeout  3
-console-mode max
-editor   no
+default  arch.conf  
+timeout  3  
+console-mode max  
+editor   no  
 ```bash
 # 获取UUID
-blkid /dev/sda2
+blkid /dev/sdx2
 vim /boot/loader/entries/arch.conf
 # 写入
 ```
 >
-title   Arch Linux
-linux   /vmlinuz-linux
-initrd  /intel-ucode.img
-initrd  /initramfs-linux.img
-options rd.luks.name=<UUID>=cryptlvm root=/dev/dellvg/dellroot rw
+title   Arch Linux  
+linux   /vmlinuz-linux  
+initrd  /intel-ucode.img  
+initrd  /initramfs-linux.img  
+options rd.luks.name=<UUID>=cryptlvm root=/dev/macvg/macroot rw
 ### 启用系统服务
 ```bash
 systemctl enable plasmalogin
@@ -229,7 +228,7 @@ EDITOR=vim visudo
 Defaults env_reset,timestamp_timeout=60
 ### 配置/swapfile 文件
 ```
-sudo fallocate -l 8G /swapfile
+sudo fallocate -l 4G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
@@ -255,14 +254,13 @@ alsamixer
 ```
 #### 蓝牙
 ```bash
-sudo pacman -S bluedevil bluez、bluez-utils
+sudo pacman -S bluedevil bluez bluez-utils
 sudo systemctl enable --now bluetooth.service
 ```
 ### KVM/QEMU虚拟机
 #### 安装KVM/QEMU
 ```bash
-sudo pacman -S qemu-desktop virt-manager virt-viewer libvirt edk2-ovmf dnsmasq openbsd-netcat
----
+sudo pacman -S qemu-desktop virt-manager virt-viewer libvirt edk2-ovmf dnsmasq
 # 加入用户组
 sudo usermod -aG libvirt $USER
 sudo usermod -aG kvm $USER
