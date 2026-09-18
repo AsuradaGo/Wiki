@@ -246,12 +246,31 @@ sudo pacman -S alsa-utils
 sudo pacman -S pipewire-pulse pipewire-alsa
 systemctl --user enable --now pipewire-pulse.service
 alsamixer
+# 声音图标
+sudo pacman -S plasma-pa
 ```
 #### 蓝牙
 ```bash
 sudo pacman -S bluedevil bluez bluez-utils
 sudo systemctl enable --now bluetooth.service
 ```
+#### MacBook启动项管理
+> 针对于重装Linux系统之后，启动时MacBook转圈等待时间过长，此处方案对于使用systemd-boot引导
+```bash
+# 确定问题所在
+sudo pacman -S efibootmgr
+systemd-analyze
+efibootmgr
+# 查看输出里的BootOrder。如果排在前面的 BootXXXX 条目不是指向systemd-boot（通常叫 Linux Boot Manager，路径类似 \EFI\systemd\systemd-bootx64.efi），就需要把它调到第一位。
+假设systemd-boot条目是Boot0001，可以这样调整：
+sudo efibootmgr -o 0001,其他的编号...
+# 用efibootmgr删除Boot0080
+sudo efibootmgr -b 0080 -B
+```
+  - efibootmgr：操作 UEFI 启动项的命令行工具
+  - -b 0080：-b 是 --bootnum，指定要操作的启动项编号。这里 0080 就是你 efibootmgr 输出里的 Boot0080
+  - -B：--delete-bootnum，删除 -b 指定的那个启动项
+- - 整条命令的意思就是：删除编号为 Boot0080 的 UEFI 启动条目,Boot0080是当前 BootOrder 里唯一指向 systemd-boot 的条目。删掉它之后，NVRAM 里就没有有效的启动项了。这时 Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件
 ### KVM/QEMU虚拟机
 #### 安装KVM/QEMU
 ```bash
@@ -308,6 +327,11 @@ sudo udisksctl power-off -b /dev/sdx
 sudo pacman -S smar?tool
 sudo smartctl -H /dev/sda
 sudo smartctl -a /dev/sda
+```
+### konsole SSH连接记录
+```bash
+# 对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可
+sudo vim ~/.ssh/known_hosts
 ```
 ### Docker
 #### Docker安装
@@ -613,12 +637,23 @@ pkg upgrade
 ssh -i "Oracle.Key路径:~/storage/downloads/Oracle9092.key" username@Public_IP
 ```
 ### 安装xfce桌面与远程桌面
+> 安装完整的xfce桌面并默认启动后进入桌面
 ```bash
-sudo apt install xfce4 xfce4-goodies xrdp fonts-noto-cjk fcitx5 fcitx5-chinese-addons fcitx5-frontend-gtk3 fcitx5-frontend-qt5 fcitx5-config-qt
+sudo apt install xfce4 xrdp fonts-noto-cjk
 sudo systemctl enable xrdp
 sudo adduser xrdp ssl-cert
 echo "xfce4-session" > ~/.xsession
 sudo passwd debian
+```
+> 最小化安装xfce桌面并默认启动后进入tty界面
+```bash
+sudo pacman -S xfce4
+sudo pacman -S xorg-xinit
+# 创建配置文件
+sudo vim ~/.xinitrc
+- exec startxfce4
+# 启动进入TTY界面后，如果需要登录桌面，输入：
+startx
 ```
 ### 设置中文语言
 ```bash
@@ -626,6 +661,10 @@ sudo vim /etc/locale.gen
 # 取消注释 en_US.UTF-8 和 zh_CN.UTF-8
 sudo locale-gen
 sudo update-locale LANG=zh_CN.UTF-8
+```
+### Fcitx5
+```bash
+sudo apt install fcitx5 fcitx5-chinese-addons fcitx5-frontend-gtk3 fcitx5-frontend-qt5 fcitx5-config-qt
 ```
 ### 普通用户加入sudo
 ```bash
