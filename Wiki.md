@@ -545,7 +545,9 @@ yay -S google-chrome
 sudo pacman -S chromium
 ```
 ### LibreOffice
+```bash
 sudo pacman -S libreoffice-still libreoffice-still-zh-cn
+```
 ### Kwallet
 ```bash
 建议设置空密码
