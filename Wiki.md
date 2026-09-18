@@ -216,10 +216,6 @@ vim /etc/crypttab
 cryptlvm UUID=your-luks-uuid none discard
 改为：
 cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto
-### Fcitx5输入法
-```bash
-sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-qt
-```
 ### sudo免密时间长度
 ```bash
 EDITOR=vim visudo
@@ -507,6 +503,10 @@ git clone https://aur.archlinux.org/yay-bin.git
 cd yay-bin
 makepkg -si
 ```
+### Fcitx5输入法
+```bash
+sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-qt
+```
 ### Google Chrome
 ```bash
 yay -S google-chrome
@@ -515,10 +515,8 @@ yay -S google-chrome
 ```bash
 sudo pacman -S chromium
 ```
-### Fcitx5
-```bash
-sudo pacman -S fcitx5 fcitx5-configtool fcitx5-qt fcitx5-gtk fcitx5-chinese-addons
-```
+### LibreOffice
+sudo pacman -S libreoffice-still libreoffice-still-zh-cn
 ### Kwallet
 建议设置空密码
 ### crunch
