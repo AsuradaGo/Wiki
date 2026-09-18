@@ -64,14 +64,14 @@ iwctl station wlan0 connect "WiFi名称"
 timedatectl
 ```
 ### 硬盘分区
-1. 清除磁盘
 ```bash
+# 清除磁盘
 wipefs -a /dev/sdx
 blkdiscard /dev/sdx
 待补充完善
 ```
-2. 不采用加密分区方案
 ```bash
+# 不加密分区方案
 gdisk /dev/sdx
 # 输入: x (进入专家模式)
 # 输入: z (清空所有分区表)
@@ -87,8 +87,8 @@ mkfs.ext4 /dev/sdx2       # 系统根分区
 mount /dev/sdx2 /mnt
 mount --mkdir /dev/sdx1 /mnt/boot
 ```
-3. 加密分区方案
 ```bash
+# 加密分区方案
 lsblk
 gdisk /dev/sdx
 # 输入: x (进入专家模式)
@@ -140,16 +140,16 @@ pacman -S plasma-login-manager plasma-desktop kwalletmanager kscreen krdp konsol
 ```
 ### 设置时区与时间
 ```bash
-ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-hwclock --systohc
+ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  
+hwclock --systohc  
 ```
 ### locale和hostname设置
 ```bash
 vim /etc/locale.gen
-# 取消注释: en_US.UTF-8 UTF-8 和 zh_CN.UTF-8 UTF-8
-echo 'LANG=en_US.UTF-8' > /etc/locale.conf
-echo 'arch' > /etc/hostname
-locale-gen
+# 取消注释: en_US.UTF-8 UTF-8 和 zh_CN.UTF-8 UTF-8  
+echo 'LANG=en_US.UTF-8' > /etc/locale.conf  
+echo 'arch' > /etc/hostname  
+locale-gen  
 ```
 ### 用户配置
 ```bash
@@ -167,15 +167,14 @@ mkinitcpio -P
 HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
 ```
 ### 配置引导
-1. 不加密磁盘方案采用GRUB引导
 ```bash
+# 不加密磁盘方案采用GRUB引导
 pacman -S grub efibootmgr
 grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
-2. 加密磁盘方案采用systemd-boot引导
-安装systemd-boot到boot分区
 ```bash
+# 加密磁盘方案采用systemd-boot引导
 bootctl install
 vim /boot/loader/loader.conf
 # 写入：
@@ -183,8 +182,6 @@ default  arch.conf
 timeout  3  
 console-mode max  
 editor   no 
-``` 
-```bash
 # 获取UUID
 blkid /dev/sdx2
 vim /boot/loader/entries/arch.conf
@@ -271,9 +268,9 @@ sudo virsh net-autostart default
 #### KVM虚拟机与宿主机传输文件（virtiofs）
 - 虚拟机已关闭
 - 宿主机为 Linux 系统
-1. 打开 `virt-manager`，选择目标虚拟机，点击 **"打开"** 进入详情界面--内存，勾选共享内存
-2. 点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `SharedHost`
-3. 自动挂载配置
+  - 打开 `virt-manager`，选择目标虚拟机，点击 **"打开"** 进入详情界面--内存，勾选共享内存
+  - 点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `SharedHost`
+  - 自动挂载配置
 ```bash
 vim /etc/fstab
 # 写入：
@@ -281,8 +278,9 @@ Tab_Virtiofs /mnt/sharefolder  virtiofs          rw,noatime,nofail,x-systemd.aut
 ```
 4. 手动挂载
 ```bash
-mkdir -p /ShareFolder   # 创建挂载点
-sudo mount -t virtiofs sharehost ~/sharefolder
+# 创建挂载点
+mkdir -p /ShareFolder  
+sudo mount -t virtiofs sharehost ~/sharefolder  
 ```
 ### 磁盘操作
 1. 清除磁盘
