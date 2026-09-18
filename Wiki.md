@@ -163,9 +163,9 @@ EDITOR=vim visudo # 配置 sudo
 vim /etc/mkinitcpio.conf
 # 重新生成initramfs
 mkinitcpio -P
-```
->
+# 样式：
 HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
+```
 ### 配置引导
 1. 不加密磁盘方案采用GRUB引导
 ```bash
@@ -173,29 +173,31 @@ pacman -S grub efibootmgr
 grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
-2.加密磁盘方案采用systemd-boot引导
+2. 加密磁盘方案采用systemd-boot引导
 安装systemd-boot到boot分区
 ```bash
 bootctl install
 vim /boot/loader/loader.conf
-```
->
+# 写入：
 default  arch.conf  
 timeout  3  
 console-mode max  
-editor   no  
+editor   no 
+``` 
 ```bash
 # 获取UUID
 blkid /dev/sdx2
 vim /boot/loader/entries/arch.conf
-# 写入
-```
->
+# 写入：
 title   Arch Linux  
 linux   /vmlinuz-linux  
 initrd  /intel-ucode.img  
 initrd  /initramfs-linux.img  
+# 磁盘加密写法
 options rd.luks.name=<UUID>=cryptlvm root=/dev/macvg/macroot rw
+# 不加密磁盘写法
+options root=UUID=<UUID> rw
+```
 ### 启用系统服务
 ```bash
 systemctl enable plasmalogin
@@ -219,9 +221,9 @@ cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto
 ### sudo免密时间长度
 ```bash
 EDITOR=vim visudo
-```
->
+# 写入：
 Defaults env_reset,timestamp_timeout=60
+```
 ### 配置/swapfile 文件
 ```
 sudo fallocate -l 4G /swapfile
@@ -230,9 +232,9 @@ sudo mkswap /swapfile
 sudo swapon /swapfile
 sudo swapon --show
 sudo nano /etc/fstab
-```
->
+# 写入：
 /swapfile none swap defaults 0 0
+```
 ### MacBookPro优化
 #### 电源管理
 ```bash
@@ -274,9 +276,9 @@ sudo virsh net-autostart default
 3. 自动挂载配置
 ```bash
 vim /etc/fstab
-```
->
+# 写入：
 Tab_Virtiofs /mnt/sharefolder  virtiofs          rw,noatime,nofail,x-systemd.automount 0 0
+```
 4. 手动挂载
 ```bash
 mkdir -p /ShareFolder   # 创建挂载点
@@ -316,7 +318,7 @@ sudo pacman -S docker
 sudo systemctl start docker
 sudo systemctl enable docker.socket
 # 加入组
-usermod xxxx
+sudo usermod -aG docker $USER
 ```
 #### Docker基础操作
 1. 彻底删除某个 Compose 项目
@@ -332,9 +334,11 @@ rm -rf ~/docker/项目文件夹名称
 #### Docker-OpenVPN
 ```bash
 # 开启 IP 转发
-echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/net_openvpn.conf
-echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.d/net_openvpn.conf
-sudo sysctl -p /etc/sysctl.d/net_openvpn.conf
+echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/net_openvpn.conf  
+echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.d/net_openvpn.conf  
+sudo sysctl -p /etc/sysctl.d/net_openvpn.conf  
+```
+```bash
 # 运行容器
 docker run -d \
   --name openvpn \
@@ -345,24 +349,31 @@ docker run -d \
   --device=/dev/net/tun \
   hwdsl2/openvpn-server
 # 管理客户端
-docker exec openvpn ovpn_manage --addclient Oracle02 # 新建OpenVPN客户端文件
-docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn . # 从docker复制文件到主机目录
+```bash
+# 新建OpenVPN客户端文件
+docker exec openvpn ovpn_manage --addclient Oracle02 
+# 从docker复制文件到主机目录
+docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn .  
 ```
 #### Docker-Alist
 ```bash
-mkdir -p ~/docker/alist # 创建项目目录
+# 创建项目目录
+mkdir -p ~/docker/alist  
+# 运行
 docker run -d \
 --name=alist \
 --restart=always --network=host \
 -v ~/docker/alist:/opt/alist/data \
 -e PUID=1000 -e PGID=1000 \
-xhofe/alist:latest
+xhofe/alist:latest  
 # 设置密码
-sudo docker exec -it alist ./alist admin set your-password
+sudo docker exec -it alist ./alist admin set your-password  
 ```
 #### Docker-Aria2
 ```bash
-mkdir -p ~/docker/aria2/config # 创建项目目录
+# 创建项目目录
+mkdir -p ~/docker/aria2/config
+# 运行  
 docker run -d \
 --name aria2-pro \
 --net=host \
@@ -377,7 +388,9 @@ p3terx/aria2-pro
 ```
 #### Docker-Code-Server(Web Coding)
 ```bash
-mkdir -p ~/docker/code-server #创建项目目录
+# 创建项目目录
+mkdir -p ~/docker/code-server  
+# 运行
 docker run -d \
 --name=code-server \
 --restart=always \
@@ -391,7 +404,9 @@ lscr.io/linuxserver/code-server:latest
 ```
 #### Docker-Chromium
 ```bash
-mkdir -p ~/docker/chromium # 创建项目目录
+# 创建项目目录
+mkdir -p ~/docker/chromium 
+# 运行 
 docker run -d \
 --name=chromium \
 --net=host \
@@ -405,7 +420,9 @@ lscr.io/linuxserver/chromium:latest
 ```
 #### Docker-NetData (监控面板)
 ```bash
-mkdir -p ~/docker/netdata #创建项目目录
+# 创建项目目录
+mkdir -p ~/docker/netdata 
+# 运行 
 docker run -d \
 --name=netdata \
 --pid=host \
@@ -433,7 +450,9 @@ netdata/netdata:stable
 ```
 #### Metasploit
 ```bash
-mkdir -p ~/docker/metasploit
+# 创建项目目录
+mkdir -p ~/docker/metasploit  
+# 运行
 docker run -it -d \
 --name metasploit \
 --net=host \
@@ -450,7 +469,9 @@ docker exec -it metasploit msfconsole
 ```
 #### PostgreSQL
 ```bash
-mkdir -p ~/docker/postgresql # 创建项目目录
+# 创建项目目录
+mkdir -p ~/docker/postgresql  
+# 运行
 docker run -d \
 --name postgresql \
 --net=host \
@@ -460,44 +481,54 @@ docker run -d \
 postgres:latest
 # 连接并操作
 docker exec -it postgresql psql -U postgres
-# 修改密码: ALTER USER postgres WITH PASSWORD 'new-password';
-# 创建用户: CREATE USER user_asurada WITH PASSWORD 'password';
-# 创建数据库: CREATE DATABASE data_asurada OWNER asurada;
-# 退出: \q
-# 连接新数据库: psql -h 127.0.0.1 -p 5432 -U user_asurada -d data_asurada
+# 修改密码
+ALTER USER postgres WITH PASSWORD 'new-password';
+# 创建用户
+CREATE USER user_asurada WITH PASSWORD 'password';
+# 创建数据库
+CREATE DATABASE data_asurada OWNER asurada;
+# 退出
+\q
+# 连接新数据库
+psql -h 127.0.0.1 -p 5432 -U user_asurada -d data_asurada  
 ```
 #### PostgreSQL 备份,恢复与导入
 **备份**
 ```bash
-pg_dump -U user_asurada -d data_asurada --section=pre-data --section=data -F c -Z 9 --file=~/asura_data.dump
-# 验证: ls -lh /home/asuraarch/asura_data.dump && echo $? (输出 0 为成功)
-# 列出内容: pg_restore -l ~/asura_data.dump
+pg_dump -U user_asurada -d data_asurada --section=pre-data --section=data -F c -Z 9 --file=~/asura_data.dump  
+# 验证
+ls -lh /home/asuraarch/asura_data.dump && echo $?  
+(输出 0 为成功)
+# 列出内容
+pg_restore -l ~/asura_data.dump  
 ```
 **恢复**
 ```bash
 # 前提：已创建好目标用户和数据库
-pg_restore --section=pre-data --section=data -v -U user_asurada -d data_asurada --noowner ~/asura_data.dump
-# 检查: \dt, \dv, \ds, \d table_name, SELECT COUNT(*) FROM table_name;
+pg_restore --section=pre-data --section=data -v -U user_asurada -d data_asurada --noowner ~/asura_data.dump  
+# 检查
+\dt, \dv, \ds, \d table_name, SELECT COUNT(*) FROM table_name;  
 ```
 **删除数据库**
 ```bash
-psql -U user_asurada -d data_asurada -c "DROP DATABASE data_asurada;"
+psql -U user_asurada -d data_asurada -c "DROP DATABASE data_asurada;"  
 ```
-**PostgreSQL 数据导入示例**
+**PostgreSQL数据导入示例**
 ```bash
 # 创建表
-CREATE TABLE table_2026 ( phone VARCHAR(20), uid VARCHAR(50) );
+CREATE TABLE table_2026 ( phone VARCHAR(20), uid VARCHAR(50) );  
 # 导入数据
-\copy table_2026 (phone, uid) FROM '~/Test.txt' DELIMITER E'\t' CSV HEADER;
+\copy table_2026 (phone, uid) FROM '~/Test.txt' DELIMITER E'\t' CSV HEADER;  
 # 创建索引
-ANALYZE table_2026;
-CREATE INDEX idx_phone ON table_2026("phone");
-CREATE INDEX idx_uid ON table_2026("uid");
+ANALYZE table_2026;  
+CREATE INDEX idx_phone ON   table_2026("phone");  
+CREATE INDEX idx_uid ON table_2026("uid");  
 # 查询: SELECT * FROM table_2026 WHERE "phone" = 'Your Phone';
 ```
 ### yay
 ```bash
-sudo pacman -S git base-devel # 如果未安装需提前安装
+sudo pacman -S git base-devel 
+# 如果未安装需提前安装
 cd ~
 git clone https://aur.archlinux.org/yay-bin.git
 cd yay-bin
@@ -518,7 +549,9 @@ sudo pacman -S chromium
 ### LibreOffice
 sudo pacman -S libreoffice-still libreoffice-still-zh-cn
 ### Kwallet
+```bash
 建议设置空密码
+```
 ### crunch
 ```bash
 yay -S crunch
