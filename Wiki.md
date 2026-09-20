@@ -368,7 +368,7 @@ docker run -d \
 # 新建OpenVPN客户端文件
 docker exec openvpn ovpn_manage --addclient Oracle02 
 # 从docker复制文件到主机目录
-docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn .  
+docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn (.)
 ```
 #### Docker-Alist
 ```bash
