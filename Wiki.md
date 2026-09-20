@@ -65,12 +65,6 @@ timedatectl
 ```
 ### 硬盘分区
 ```bash
-# 清除磁盘
-wipefs -a /dev/sdx
-blkdiscard /dev/sdx
-待补充完善
-```
-```bash
 # 不加密分区方案
 gdisk /dev/sdx
 # 输入: x (进入专家模式)
@@ -267,10 +261,10 @@ sudo efibootmgr -o 0001,其他的编号...
 # 用efibootmgr删除Boot0080
 sudo efibootmgr -b 0080 -B
 ```
-  - efibootmgr：操作 UEFI 启动项的命令行工具
-  - -b 0080：-b 是 --bootnum，指定要操作的启动项编号。这里 0080 就是你 efibootmgr 输出里的 Boot0080
-  - -B：--delete-bootnum，删除 -b 指定的那个启动项
-- - 整条命令的意思就是：删除编号为 Boot0080 的 UEFI 启动条目,Boot0080是当前 BootOrder 里唯一指向 systemd-boot 的条目。删掉它之后，NVRAM 里就没有有效的启动项了。这时 Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件
+  - efibootmgr：操作UEFI启动项的命令行工具
+  - -b 0080：-b 是 --bootnum，指定要操作的启动项编号。这里 0080 就是efibootmgr输出里的Boot0080
+  - -B：--delete-bootnum，删除-b指定的那个启动项
+- - 整条命令的意思：删除编号为Boot0080的UEFI启动条目,Boot0080是当前BootOrder里唯一指systemd-boot的条目。删掉它之后,NVRAM里就没有有效的启动项了。这时Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件
 ### KVM/QEMU虚拟机
 #### 安装KVM/QEMU
 ```bash
@@ -291,15 +285,16 @@ sudo virsh net-autostart default
   - 点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `SharedHost`
   - 自动挂载配置
 ```bash
+mkdir -p /ShareFolder
 vim /etc/fstab
 # 写入：
-Tab_Virtiofs /mnt/sharefolder  virtiofs          rw,noatime,nofail,x-systemd.automount 0 0
+Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0
 ```
-4. 手动挂载
+  - 手动挂载
 ```bash
 # 创建挂载点
 mkdir -p /ShareFolder  
-sudo mount -t virtiofs sharehost ~/sharefolder  
+sudo mount -t virtiofs ShareHost ~/ShareFolder  
 ```
 ### 磁盘操作
 1. 清除磁盘
@@ -343,8 +338,8 @@ sudo systemctl enable docker.socket
 sudo usermod -aG docker $USER
 ```
 #### Docker基础操作
-1. 彻底删除某个 Compose 项目
 ```bash
+# 彻底删除某个Compose项目
 cd ＂docker项目目录＂
 docker compose down -v --rmi all --remove-orphans
 # 检查残留数据卷
@@ -370,8 +365,6 @@ docker run -d \
   --cap-add=NET_ADMIN \
   --device=/dev/net/tun \
   hwdsl2/openvpn-server
-# 管理客户端
-```bash
 # 新建OpenVPN客户端文件
 docker exec openvpn ovpn_manage --addclient Oracle02 
 # 从docker复制文件到主机目录
