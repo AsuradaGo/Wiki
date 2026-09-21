@@ -359,7 +359,8 @@ docker run -d \
   --name openvpn \  
   --restart=always --network host \  
   -v openvpn-data:/etc/openvpn \  
-  -e VPN_PORT=9092 -e VPN_PROTO=tcp \  
+  -e VPN_PORT=9092 \  
+  -e VPN_PROTO=tcp \  
   --cap-add=NET_ADMIN \  
   --device=/dev/net/tun \  
   hwdsl2/openvpn-server  
