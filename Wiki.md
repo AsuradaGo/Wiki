@@ -416,23 +416,27 @@ sudo systemctl enable docker.socket
 sudo usermod -aG docker $USER
 ```
 #### Docker基础操作
+- 彻底删除某个Compose项目
 ```bash
-  - 彻底删除某个Compose项目
-cd ＂docker项目目录＂
+cd docker项目目录
 docker compose down -v --rmi all --remove-orphans
-  - 检查残留数据卷
-docker volume ls  
-  - 删除项目文件
+```
+- 检查残留数据卷
+```
+docker volume ls
+```
+- 删除项目文件
+```
 rm -rf ~/docker/项目文件夹名称 
 ```
 #### Docker-OpenVPN
+- 可选配置
 ```bash
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/net_openvpn.conf
 echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.d/net_openvpn.conf
 sudo sysctl -p /etc/sysctl.d/net_openvpn.conf
-  - 可选配置
 ```
-```bash
+```
 docker run -d \
   --name openvpn \
   --restart=always --network host \
@@ -442,11 +446,17 @@ docker run -d \
   --cap-add=NET_ADMIN \
   --device=/dev/net/tun \
   hwdsl2/openvpn-server
-  - 新建OpenVPN客户端文件
+```
+- 新建OpenVPN客户端文件
+```
 docker exec openvpn ovpn_manage --addclient Oracle
-  - 从docker复制文件到主机目录
+```
+- 从docker复制文件到主机目录
+```
 docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn .
-  - 从云主机复制到本地设备
+```
+- 从云主机复制到本地设备
+```
 scp -i /storage/emulated/0/Download/Oracle/private.key username@Public:~/Oracle.ovpn /storage/emulated/0/Download/Oracle/
 scp -i /home/asurada/Downloads/Oracle/private.key username@Public:~/Oracle.ovpn /home/asurada/Downloads/Oracle/
 ```
