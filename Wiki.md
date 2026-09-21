@@ -1,4 +1,4 @@
-# 前言-Markdown使用说明
+# Markdown使用说明
 ## 1.标题
 ```
 # 一级标题
@@ -52,18 +52,18 @@
 ```
 # Linux-Wiki
 ## ArchLinux 安装与配置
-### 连接网络
+连接网络
 ```bash
 iwctl device list
 iwctl station wlan0 scan
 iwctl station wlan0 get-networks
 iwctl station wlan0 connect "WiFi名称"
 ```
-### 更新系统时间
+更新系统时间
 ```bash
 timedatectl
 ```
-### 硬盘分区
+硬盘分区
 ```bash
 # 不加密分区方案
 gdisk /dev/sdx
@@ -105,7 +105,7 @@ mkfs.ext4 /dev/macvg/macroot
 mount /dev/macvg/macroot /mnt
 mount --mkdir /dev/sdx1 /mnt/boot
 ```
-### 配置镜像源
+配置镜像源
 ```bash
 vim /etc/pacman.d/mirrorlist
 ```
@@ -115,147 +115,173 @@ Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch
 Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch  
 Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch  
 Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch    
-### 安装基础系统
+安装基础系统
 ```bash
 pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms lvm2 cryptsetup(对于采用lvm LUKS加密方案）
 ```
-### 生成 fstab 文件
+生成 fstab 文件
 ```bash
 genfstab -U /mnt > /mnt/etc/fstab
 cat /mnt/etc/fstab  # 检查fstab文件
 ```
-### chroot进入新系统
+chroot进入新系统
 ```bash
 arch-chroot /mnt
 ```
-### 安装必要软件包
+安装必要软件包
 ```bash
 pacman -S plasma-login-manager plasma-desktop kwalletmanager kscreen krdp konsole dolphin sudo vim networkmanager networkmanager-openvpn plasma-nm noto-fonts-cjk
 ```
-### 设置时区与时间
+设置时区与时间
 ```bash
-ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  
+ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+```
+```bash
 hwclock --systohc  
 ```
-### locale和hostname设置
+locale和hostname设置
+取消注释en_US.UTF-8 UTF-8 和 zh_CN.UTF-8
 ```bash
 vim /etc/locale.gen
-# 取消注释: en_US.UTF-8 UTF-8 和 zh_CN.UTF-8 UTF-8  
-echo 'LANG=en_US.UTF-8' > /etc/locale.conf  
-echo 'arch' > /etc/hostname  
-locale-gen  
 ```
-### 用户配置
+```bash
+echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+```
+```bash 
+echo 'arch' > /etc/hostname
+```
+```bash
+locale-gen
+```
+用户配置
 ```bash
 passwd # 设置 Root 密码
-useradd -m asurada
-passwd asurada # 设置用户密码
+useradd -m username
+passwd username # 设置用户密码
 EDITOR=vim visudo # 配置 sudo
 ```
-### 配置 mkinitcpio.conf（采用磁盘加密方案按需配置）
+配置 mkinitcpio.conf（如采用磁盘加密方案）
 ```bash
 vim /etc/mkinitcpio.conf
-# 重新生成initramfs
-mkinitcpio -P
-# 样式：
-HOOKS=(base systemd autodetect keyboard modconf block (sd-encrypt lvm2) filesystems fsck)
 ```
-### 配置引导
+>> HOOKS=(base systemd autodetect keyboard modconf block **sd-encrypt** **lvm2** filesystems fsck)
+重新生成initramfs
 ```bash
-# 不加密磁盘方案采用GRUB引导
+mkinitcpio -P
+```
+配置引导
+不加密磁盘方案采用GRUB引导
+```bash
 pacman -S grub efibootmgr
 grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
+加密磁盘方案采用systemd-boot引导
 ```bash
-# 加密磁盘方案采用systemd-boot引导
 bootctl install
+```
+```bash
 vim /boot/loader/loader.conf
-# 写入：
+```
+>> 
 default  arch.conf  
 timeout  3  
 console-mode max  
-editor   no 
-# 获取UUID
+editor   no
+```bash
 blkid /dev/sdx2
+```
+```bash
 vim /boot/loader/entries/arch.conf
-# 写入：
+```
+>>
+加密磁盘写法
 title   Arch Linux  
 linux   /vmlinuz-linux  
 initrd  /intel-ucode.img  
 initrd  /initramfs-linux.img  
-# 磁盘加密写法
 options rd.luks.name=<UUID>=cryptlvm root=/dev/macvg/macroot rw
-# 不加密磁盘写法
+>>
+不加密磁盘写法
+title   Arch Linux  
+linux   /vmlinuz-linux  
+initrd  /intel-ucode.img  
+initrd  /initramfs-linux.img
 options root=UUID=<UUID> rw
-```
-### 启用系统服务
+
+启用系统服务
 ```bash
 systemctl enable plasmalogin
+```
+```bash
 systemctl enable NetworkManager
 ```
-### 退出并卸载分区
+退出并卸载分区
 ```bash
 exit
 umount -R /mnt
 ```
-### 配置TPM自动解锁
+TPM自动解锁
 ```bash
 sudo systemd-cryptenroll --tpm2-device=auto /dev/sda2
+```
+```bash
 vim /etc/crypttab
 ```
->
-找到对应 cryptlvm 的那一行（如果没有，需要手动创建它），并在其选项末尾添加 tpm2-device=auto :
+>>
+找到对应 cryptlvm 的那一行（如果没有，需要手动创建它），并在其选项末尾添加 tpm2-device=auto 即:
 cryptlvm UUID=your-luks-uuid none discard
 改为：
 cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto
-### sudo免密时间长度
+sudo免密时间长度
 ```bash
 EDITOR=vim visudo
-# 写入：
+```
+>>
 Defaults env_reset,timestamp_timeout=60
-```
-### 配置/swapfile 文件
-```
+
+配置/swapfile 文件
+```bash
 sudo fallocate -l 4G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 sudo swapon --show
 sudo nano /etc/fstab
-# 写入：
-/swapfile none swap defaults 0 0
 ```
-### MacBookPro优化
-#### 电源管理
+>>
+/swapfile none swap defaults 0 0
+
+MacBookPro优化
+电源管理
 ```bash
 sudo pacman -S tlp tlp-rdw
 yay -S mbpfan-git
 sudo systemctl enable --now tlp
 sudo systemctl enable --now mbpfan
 ```
-#### 声卡
+声卡
 ```bash
 sudo pacman -S alsa-utils
 sudo pacman -S pipewire-pulse pipewire-alsa
+sudo pacman -S plasma-pa
 systemctl --user enable --now pipewire-pulse.service
 alsamixer
-# 声音图标
-sudo pacman -S plasma-pa
 ```
-#### 蓝牙
+蓝牙
 ```bash
 sudo pacman -S bluedevil bluez bluez-utils
 sudo systemctl enable --now bluetooth.service
 ```
-#### MacBook启动项管理
+MacBook启动项管理
 > 针对于重装Linux系统之后，启动时MacBook转圈等待时间过长，此处方案对于使用systemd-boot引导
+确定问题所在
 ```bash
-# 确定问题所在
 sudo pacman -S efibootmgr
 systemd-analyze
 efibootmgr
-# 查看输出里的BootOrder。如果排在前面的 BootXXXX 条目不是指向systemd-boot（通常叫 Linux Boot Manager，路径类似 \EFI\systemd\systemd-bootx64.efi），就需要把它调到第一位。
+```
+查看输出里的BootOrder。如果排在前面的 BootXXXX 条目不是指向systemd-boot（通常叫 Linux Boot Manager，路径类似 \EFI\systemd\systemd-bootx64.efi），就需要把它调到第一位。
 假设systemd-boot条目是Boot0001，可以这样调整：
 sudo efibootmgr -o 0001,其他的编号...
 # 用efibootmgr删除Boot0080
@@ -265,20 +291,26 @@ sudo efibootmgr -b 0080 -B
   - -b 0080：-b 是 --bootnum，指定要操作的启动项编号。这里 0080 就是efibootmgr输出里的Boot0080
   - -B：--delete-bootnum，删除-b指定的那个启动项
 - - 整条命令的意思：删除编号为Boot0080的UEFI启动条目,Boot0080是当前BootOrder里唯一指systemd-boot的条目。删掉它之后,NVRAM里就没有有效的启动项了。这时Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件
-### KVM/QEMU虚拟机
-#### 安装KVM/QEMU
+## KVM/QEMU虚拟机
+安装KVM/QEMU
 ```bash
 sudo pacman -S qemu-desktop virt-manager virt-viewer libvirt edk2-ovmf dnsmasq
-# 加入用户组
+```
+加入用户组
+```bash
 sudo usermod -aG libvirt $USER
 sudo usermod -aG kvm $USER
-# 启动服务并设置开启自启动
+```
+启动服务并设置开启自启动
+```
 sudo systemctl enable --now libvirtd
-# 设置虚拟机网络自动启动
+```
+设置虚拟机网络自动启动
+```bash
 sudo virsh net-list --all
 sudo virsh net-autostart default
 ```
-#### KVM虚拟机与宿主机传输文件（virtiofs）
+KVM虚拟机与宿主机传输文件（virtiofs）
 - 虚拟机已关闭
 - 宿主机为 Linux 系统
   - 打开 `virt-manager`，选择目标虚拟机，点击 **"打开"** 进入详情界面--内存，勾选共享内存
@@ -287,97 +319,101 @@ sudo virsh net-autostart default
 ```bash
 mkdir -p /ShareFolder
 vim /etc/fstab
-# 写入：
-Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0
 ```
+>>
+Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0
   - 手动挂载
 ```bash
-# 创建挂载点
 mkdir -p /ShareFolder  
 sudo mount -t virtiofs ShareHost ~/ShareFolder  
 ```
-### 磁盘操作
+## 磁盘操作
+清除磁盘分区和数据
 ```bash
-清除磁盘
 wipefs -a /dev/sda
 blkdiscard /dev/sda
 待补充完善
 ```
-```bash
 加密设备挂载/卸载
 挂载设备
+```bash
 mkdir -p ~/mount
 sudo cryptsetup luksOpen /dev/sdx sdcard
 sudo mount /dev/mapper/sdcard ~/mount
+```
 卸载设备
+```bash
 sudo umount ~/mount
 sudo cryptsetup luksClose sdcard
+```
 权限设置
+```bash
 sudo chown -R username:username ~/TestFolder
+```
 断开设备电源
+```bash
 sudo udisksctl power-off -b /dev/sdx
 ```
-```bash
 smartctl查看磁盘健康状态
+```bash
 sudo pacman -S smar?tool
 sudo smartctl -H /dev/sda
 sudo smartctl -a /dev/sda
 ```
-### konsole SSH连接记录
+## konsole SSH连接记录
+对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可
 ```bash
-# 对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可
 sudo vim ~/.ssh/known_hosts
 ```
-### yay
+## yay
 ```bash
-sudo pacman -S git base-devel 
-# 如果未安装需提前安装
+sudo pacman -S git base-devel
 cd ~
 git clone https://aur.archlinux.org/yay-bin.git
 cd yay-bin
 makepkg -si
 ```
-### Fcitx5输入法
+## Fcitx5输入法
 ```bash
 sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-qt
 ```
-### Google Chrome
+## Google Chrome
 ```bash
 yay -S google-chrome
 ```
-### Chromium
+## Chromium
 ```bash
 sudo pacman -S chromium
 ```
-### LibreOffice
+## LibreOffice
 ```bash
 sudo pacman -S libreoffice-still libreoffice-still-zh-cn
 ```
-### Kwallet
+## Kwallet
 ```bash
 建议设置空密码
 ```
-### crunch
+## crunch
 ```bash
 yay -S crunch
 ```
-### swaks
+## swaks
 ```bash
 sudo pacman -S swaks
 ```
-### hashcat
+## hashcat
 ```bash
 yay hashcat
 ```
-### wireshark
+## wireshark
 ```bash
 yay wireshark
 ```
-### nmap
+## nmap
 ```bash
 sudo pacman -S nmap
 ```
-### Aircrack-NG
+## Aircrack-NG
 ```bash
 yay -S aircrack-ng
 ifconfig                      # 查看当前网卡
@@ -391,7 +427,7 @@ aircrack-ng xxx.cap -w 字典路径 # 字典破解
 sudo iw dev wls35u1mon set type managed # 停止监听模式 (推荐)
 sudo airmon-ng stop wls35u1mon # 不推荐，遇到网卡、内核和桌面崩溃
 ```
-### 手机 USB 共享网络
+## 手机 USB 共享网络
 ```bash
 ip a                     # 查看设备接口
 ip link set <接口名> up   # 启用接口
@@ -400,54 +436,41 @@ ping debian.org -c 3     # 验证网络
 ip route show            # 查看路由
 ip route del default via 192.168.100.1 # 删除无效路由:
 ```
-### 查看系统内核/硬件日志
+## 查看系统内核/硬件日志
 ```bash
 sudo dmesg | tail -n 50
 # 从内核日志中，过滤并高亮显示与 sda 硬盘、SATA 接口、错误（error）或失败（fail）相关的关键日志
 sudo dmesg | grep -i -E "sda|ata|error|fail"
 ```
-### Docker
-
-#### Docker 安装
-
+## Docker
+### Docker 安装
 ```bash
 sudo pacman -S docker
 sudo systemctl start docker
 sudo systemctl enable docker.socket
 sudo usermod -aG docker $USER
 ```
-
-#### Docker 基础操作
-
+### Docker 基础操作
 彻底删除某个 Compose 项目
-
 ```bash
 cd docker-dir
 docker compose down -v --rmi all --remove-orphans
 ```
-
 检查残留数据卷
-
 ```bash
 docker volume ls
 ```
-
 删除项目文件
-
 ```bash
 rm -rf ~/docker/name-of-docker
 ```
-
-#### Docker-OpenVPN
-
+### Docker-OpenVPN
 可选配置
-
 ```bash
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/net_openvpn.conf
 echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.d/net_openvpn.conf
 sudo sysctl -p /etc/sysctl.d/net_openvpn.conf
 ```
-
 ```bash
 docker run -d \
   --name openvpn \
@@ -459,26 +482,22 @@ docker run -d \
   --device=/dev/net/tun \
   hwdsl2/openvpn-server
 ```
-
 新建 OpenVPN 客户端文件
-
 ```bash
 docker exec openvpn ovpn_manage --addclient Oracle
 ```
-
 从 Docker 复制文件到主机目录
-
 ```bash
 docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn .
 ```
-
 从云主机复制到本地设备
-
 ```bash
 scp -i /storage/emulated/0/Download/Oracle/private.key username@Public:~/Oracle.ovpn /storage/emulated/0/Download/Oracle/
+```
+```bash
 scp -i /home/asurada/Downloads/Oracle/private.key username@Public:~/Oracle.ovpn /home/asurada/Downloads/Oracle/
 ```
-#### Docker-Alist
+### Docker-Alist
 ```bash
 # 创建项目目录
 mkdir -p ~/docker/alist  
@@ -492,7 +511,7 @@ xhofe/alist:latest
 # 设置密码
 sudo docker exec -it alist ./alist admin set your-password  
 ```
-#### Docker-Aria2
+### Docker-Aria2
 ```bash
 # 创建项目目录
 mkdir -p ~/docker/aria2/config
@@ -509,7 +528,7 @@ docker run -d \
 -v ~/docker/aria2/:/downloads \
 p3terx/aria2-pro
 ```
-#### Docker-Code-Server(Web Coding)
+### Docker-Code-Server(Web Coding)
 ```bash
 # 创建项目目录
 mkdir -p ~/docker/code-server  
@@ -525,7 +544,7 @@ docker run -d \
 -e PASSWORD="your-password" \
 lscr.io/linuxserver/code-server:latest
 ```
-#### Docker-Chromium
+### Docker-Chromium
 ```bash
 # 创建项目目录
 mkdir -p ~/docker/chromium 
@@ -541,7 +560,7 @@ docker run -d \
 --restart unless-stopped \
 lscr.io/linuxserver/chromium:latest
 ```
-#### Docker-NetData (监控面板)
+### Docker-NetData (监控面板)
 ```bash
 # 创建项目目录
 mkdir -p ~/docker/netdata 
@@ -571,7 +590,7 @@ netdata/netdata:stable
 # 访问
 `http://10.8.0.1:19999`
 ```
-#### Metasploit
+### Metasploit
 ```bash
 # 创建项目目录
 mkdir -p ~/docker/metasploit  
@@ -590,7 +609,7 @@ docker exec -it metasploit msfconsole
 # db_connect user_msf:password@127.0.0.1:5432/data_msf
 # db_status
 ```
-#### PostgreSQL
+### PostgreSQL
 ```bash
 # 创建项目目录
 mkdir -p ~/docker/postgresql  
@@ -615,7 +634,7 @@ CREATE DATABASE data_asurada OWNER asurada;
 # 连接新数据库
 psql -h 127.0.0.1 -p 5432 -U user_asurada -d data_asurada  
 ```
-#### PostgreSQL 备份,恢复与导入
+### PostgreSQL 备份,恢复与导入
 **备份**
 ```bash
 pg_dump -U user_asurada -d data_asurada --section=pre-data --section=data -F c -Z 9 --file=~/asura_data.dump  
