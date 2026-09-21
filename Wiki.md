@@ -297,28 +297,28 @@ mkdir -p /ShareFolder
 sudo mount -t virtiofs ShareHost ~/ShareFolder  
 ```
 ### 磁盘操作
-1. 清除磁盘
 ```bash
+清除磁盘
 wipefs -a /dev/sda
 blkdiscard /dev/sda
 待补充完善
 ```
-2. 加密设备挂载/卸载
 ```bash
-# 挂载设备
+加密设备挂载/卸载
+挂载设备
 mkdir -p ~/mount
 sudo cryptsetup luksOpen /dev/sdx sdcard
 sudo mount /dev/mapper/sdcard ~/mount
-# 卸载设备
+卸载设备
 sudo umount ~/mount
 sudo cryptsetup luksClose sdcard
-# 权限设置
+权限设置
 sudo chown -R username:username ~/TestFolder
-# 断开设备电源
+断开设备电源
 sudo udisksctl power-off -b /dev/sdx
 ```
-3. smartctl查看磁盘健康状态
 ```bash
+smartctl查看磁盘健康状态
 sudo pacman -S smar?tool
 sudo smartctl -H /dev/sda
 sudo smartctl -a /dev/sda
@@ -327,6 +327,84 @@ sudo smartctl -a /dev/sda
 ```bash
 # 对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可
 sudo vim ~/.ssh/known_hosts
+```
+### yay
+```bash
+sudo pacman -S git base-devel 
+# 如果未安装需提前安装
+cd ~
+git clone https://aur.archlinux.org/yay-bin.git
+cd yay-bin
+makepkg -si
+```
+### Fcitx5输入法
+```bash
+sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-qt
+```
+### Google Chrome
+```bash
+yay -S google-chrome
+```
+### Chromium
+```bash
+sudo pacman -S chromium
+```
+### LibreOffice
+```bash
+sudo pacman -S libreoffice-still libreoffice-still-zh-cn
+```
+### Kwallet
+```bash
+建议设置空密码
+```
+### crunch
+```bash
+yay -S crunch
+```
+### swaks
+```bash
+sudo pacman -S swaks
+```
+### hashcat
+```bash
+yay hashcat
+```
+### wireshark
+```bash
+yay wireshark
+```
+### nmap
+```bash
+sudo pacman -S nmap
+```
+### Aircrack-NG
+```bash
+yay -S aircrack-ng
+ifconfig                      # 查看当前网卡
+sudo airmon-ng                # 查看外接网卡
+sudo airmon-ng start wls35u1  # 开启监听模式 (wls35u1为接口名)
+sudo airodump-ng wls35u1mon   # 扫描网络
+# sudo airodump-ng -c [CH频道] --bssid [路由器MAC] -w cap文件名 wls35u1mon   # 抓取cap包
+sudo aireplay-ng -0 10 -a [路由器MAC] wls35u1
+sudo aireplay-ng -0 0 -a [路由器ID] -c [设备ID] wls35u1mon # 断网攻击 (Deauth)
+aircrack-ng xxx.cap -w 字典路径 # 字典破解
+sudo iw dev wls35u1mon set type managed # 停止监听模式 (推荐)
+sudo airmon-ng stop wls35u1mon # 不推荐，遇到网卡、内核和桌面崩溃
+```
+### 手机 USB 共享网络
+```bash
+ip a                     # 查看设备接口
+ip link set <接口名> up   # 启用接口
+dhcpcd <接口名>           # 通过 DHCP 获取地址
+ping debian.org -c 3     # 验证网络
+ip route show            # 查看路由
+ip route del default via 192.168.100.1 # 删除无效路由:
+```
+### 查看系统内核/硬件日志
+```bash
+sudo dmesg | tail -n 50
+# 从内核日志中，过滤并高亮显示与 sda 硬盘、SATA 接口、错误（error）或失败（fail）相关的关键日志
+sudo dmesg | grep -i -E "sda|ata|error|fail"
 ```
 ### Docker
 #### Docker安装
@@ -347,7 +425,6 @@ docker volume ls
 # 删除项目文件
 rm -rf ~/docker/项目文件夹名称 
 ```
-### 常用Docker项目部署
 #### Docker-OpenVPN
 ```
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/net_openvpn.conf  
@@ -370,7 +447,8 @@ docker exec openvpn ovpn_manage --addclient Oracle
 # 从docker复制文件到主机目录
 docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn .
 # 从云主机复制到本地设备
-scp -i /storage/emulated/0/Download/Oracle/name.key username@Public:~/Oracle.ovpn /storage/emulated/0/Download/Oracle/
+scp -i /storage/emulated/0/Download/Oracle/private.key username@Public:~/Oracle.ovpn /storage/emulated/0/Download/Oracle/
+scp -i /home/asurada/Downloads/Oracle/private.key username@Public:~/Oracle.ovpn /home/asurada/Downloads/Oracle/
 ```
 #### Docker-Alist
 ```bash
@@ -542,94 +620,16 @@ CREATE INDEX idx_phone ON   table_2026("phone");
 CREATE INDEX idx_uid ON table_2026("uid");  
 # 查询: SELECT * FROM table_2026 WHERE "phone" = 'Your Phone';
 ```
-### yay
-```bash
-sudo pacman -S git base-devel 
-# 如果未安装需提前安装
-cd ~
-git clone https://aur.archlinux.org/yay-bin.git
-cd yay-bin
-makepkg -si
-```
-### Fcitx5输入法
-```bash
-sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-qt
-```
-### Google Chrome
-```bash
-yay -S google-chrome
-```
-### Chromium
-```bash
-sudo pacman -S chromium
-```
-### LibreOffice
-```bash
-sudo pacman -S libreoffice-still libreoffice-still-zh-cn
-```
-### Kwallet
-```bash
-建议设置空密码
-```
-### crunch
-```bash
-yay -S crunch
-```
-### swaks
-```bash
-sudo pacman -S swaks
-```
-### hashcat
-```bash
-yay hashcat
-```
-### wireshark
-```bash
-yay wireshark
-```
-### nmap
-```bash
-sudo pacman -S nmap
-```
-### Aircrack-NG
-```bash
-yay -S aircrack-ng
-ifconfig                      # 查看当前网卡
-sudo airmon-ng                # 查看外接网卡
-sudo airmon-ng start wls35u1  # 开启监听模式 (wls35u1为接口名)
-sudo airodump-ng wls35u1mon   # 扫描网络
-# sudo airodump-ng -c [CH频道] --bssid [路由器MAC] -w cap文件名 wls35u1mon   # 抓取cap包
-sudo aireplay-ng -0 10 -a [路由器MAC] wls35u1
-sudo aireplay-ng -0 0 -a [路由器ID] -c [设备ID] wls35u1mon # 断网攻击 (Deauth)
-aircrack-ng xxx.cap -w 字典路径 # 字典破解
-sudo iw dev wls35u1mon set type managed # 停止监听模式 (推荐)
-sudo airmon-ng stop wls35u1mon # 不推荐，遇到网卡、内核和桌面崩溃
-```
-### 手机 USB 共享网络
-```bash
-ip a                     # 查看设备接口
-ip link set <接口名> up   # 启用接口
-dhcpcd <接口名>           # 通过 DHCP 获取地址
-ping debian.org -c 3     # 验证网络
-ip route show            # 查看路由
-ip route del default via 192.168.100.1 # 删除无效路由:
-```
-### 查看系统内核/硬件日志
-```bash
-sudo dmesg | tail -n 50
-# 从内核日志中，过滤并高亮显示与 sda 硬盘、SATA 接口、错误（error）或失败（fail）相关的关键日志
-sudo dmesg | grep -i -E "sda|ata|error|fail"
-```
-## Oracle-VPS Debian
+## Debian On Oracle&KVM/QEMU
 ### SSH 连接
 ```bash
 # 通用连接
-ssh -i ~/Oracle9092.key username@Public_IP
+ssh -i ~/private.key username@Public_IP
 # Android连接 (Termux)
 termux-change-repo
 termux-setup-storage
 pkg upgrade
-ssh -i "Oracle.Key路径:~/storage/downloads/Oracle9092.key" username@Public_IP
+ssh -i "private.Key路径:~/storage/downloads/private.key" username@Public_IP
 ```
 ### 安装xfce桌面与远程桌面
 > 安装完整的xfce桌面并默认启动后进入桌面
