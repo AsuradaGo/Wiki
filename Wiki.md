@@ -350,21 +350,19 @@ rm -rf ~/docker/项目文件夹名称
 ### 常用Docker项目部署
 #### Docker-OpenVPN
 ```bash
-# 开启 IP 转发
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/net_openvpn.conf  
 echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.d/net_openvpn.conf  
 sudo sysctl -p /etc/sysctl.d/net_openvpn.conf  
 ```
 ```bash
-# 运行容器
-docker run -d \
-  --name openvpn \
-  --restart=always --network host \
-  -v openvpn-data:/etc/openvpn \
-  -e VPN_PORT=9092 -e VPN_PROTO=tcp \
-  --cap-add=NET_ADMIN \
-  --device=/dev/net/tun \
-  hwdsl2/openvpn-server
+docker run -d \  
+  --name openvpn \  
+  --restart=always --network host \  
+  -v openvpn-data:/etc/openvpn \  
+  -e VPN_PORT=9092 -e VPN_PROTO=tcp \  
+  --cap-add=NET_ADMIN \  
+  --device=/dev/net/tun \  
+  hwdsl2/openvpn-server  
 # 新建OpenVPN客户端文件
 docker exec openvpn ovpn_manage --addclient Oracle02 
 # 从docker复制文件到主机目录
