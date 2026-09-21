@@ -1,2 +1,1 @@
-* **技术相关**
-  * [Asurada Wiki](Wiki.md)
+* [Wiki](Wiki.md)
