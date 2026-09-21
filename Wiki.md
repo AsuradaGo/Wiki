@@ -407,36 +407,48 @@ sudo dmesg | tail -n 50
 sudo dmesg | grep -i -E "sda|ata|error|fail"
 ```
 ### Docker
-#### Docker安装
+
+#### Docker 安装
+
 ```bash
 sudo pacman -S docker
 sudo systemctl start docker
 sudo systemctl enable docker.socket
-# 加入组
 sudo usermod -aG docker $USER
 ```
-#### Docker基础操作
-- 彻底删除某个Compose项目
+
+#### Docker 基础操作
+
+彻底删除某个 Compose 项目
+
 ```bash
-cd docker项目目录
+cd docker-dir
 docker compose down -v --rmi all --remove-orphans
 ```
-- 检查残留数据卷
-```
+
+检查残留数据卷
+
+```bash
 docker volume ls
 ```
-- 删除项目文件
+
+删除项目文件
+
+```bash
+rm -rf ~/docker/name-of-docker
 ```
-rm -rf ~/docker/项目文件夹名称 
-```
+
 #### Docker-OpenVPN
-- 可选配置
+
+可选配置
+
 ```bash
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/net_openvpn.conf
 echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.d/net_openvpn.conf
 sudo sysctl -p /etc/sysctl.d/net_openvpn.conf
 ```
-```
+
+```bash
 docker run -d \
   --name openvpn \
   --restart=always --network host \
@@ -447,16 +459,22 @@ docker run -d \
   --device=/dev/net/tun \
   hwdsl2/openvpn-server
 ```
-- 新建OpenVPN客户端文件
-```
+
+新建 OpenVPN 客户端文件
+
+```bash
 docker exec openvpn ovpn_manage --addclient Oracle
 ```
-- 从docker复制文件到主机目录
-```
+
+从 Docker 复制文件到主机目录
+
+```bash
 docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn .
 ```
-- 从云主机复制到本地设备
-```
+
+从云主机复制到本地设备
+
+```bash
 scp -i /storage/emulated/0/Download/Oracle/private.key username@Public:~/Oracle.ovpn /storage/emulated/0/Download/Oracle/
 scp -i /home/asurada/Downloads/Oracle/private.key username@Public:~/Oracle.ovpn /home/asurada/Downloads/Oracle/
 ```
