@@ -355,15 +355,15 @@ echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.d/net_openvpn.co
 sudo sysctl -p /etc/sysctl.d/net_openvpn.conf  
 ```
 ```bash
-docker run -d \  
-  --name openvpn \  
-  --restart=always --network host \  
-  -v openvpn-data:/etc/openvpn \  
-  -e VPN_PORT=9092 \  
-  -e VPN_PROTO=tcp \  
-  --cap-add=NET_ADMIN \  
-  --device=/dev/net/tun \  
-  hwdsl2/openvpn-server  
+docker run -d \
+  --name openvpn \
+  --restart=always --network host \
+  -v openvpn-data:/etc/openvpn \
+  -e VPN_PORT=9092 \
+  -e VPN_PROTO=tcp \
+  --cap-add=NET_ADMIN \
+  --device=/dev/net/tun \
+  hwdsl2/openvpn-server
 # 新建OpenVPN客户端文件
 docker exec openvpn ovpn_manage --addclient Oracle02 
 # 从docker复制文件到主机目录
