@@ -349,10 +349,11 @@ rm -rf ~/docker/项目文件夹名称
 ```
 ### 常用Docker项目部署
 #### Docker-OpenVPN
-```bash
+```
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/net_openvpn.conf  
 echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.d/net_openvpn.conf  
-sudo sysctl -p /etc/sysctl.d/net_openvpn.conf  
+sudo sysctl -p /etc/sysctl.d/net_openvpn.conf
+# 可选配置
 ```
 ```bash
 docker run -d \
@@ -365,9 +366,11 @@ docker run -d \
   --device=/dev/net/tun \
   hwdsl2/openvpn-server
 # 新建OpenVPN客户端文件
-docker exec openvpn ovpn_manage --addclient Oracle02 
+docker exec openvpn ovpn_manage --addclient Oracle
 # 从docker复制文件到主机目录
-docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn (.)
+docker cp openvpn:/etc/openvpn/clients/Oracle02.ovpn .
+# 从云主机复制到本地设备
+scp -i /storage/emulated/0/Download/Oracle/name.key username@Public:~/Oracle.ovpn /storage/emulated/0/Download/Oracle/
 ```
 #### Docker-Alist
 ```bash
@@ -639,8 +642,7 @@ sudo passwd debian
 ```
 > 最小化安装xfce桌面并默认启动后进入tty界面
 ```bash
-sudo pacman -S xfce4
-sudo pacman -S xorg-xinit
+sudo pacman -S xfce4 xorg-xinit xorg-server
 # 创建配置文件
 sudo vim ~/.xinitrc
 - exec startxfce4
@@ -657,11 +659,6 @@ sudo update-locale LANG=zh_CN.UTF-8
 ### Fcitx5
 ```bash
 sudo apt install fcitx5 fcitx5-chinese-addons fcitx5-frontend-gtk3 fcitx5-frontend-qt5 fcitx5-config-qt
-```
-### 普通用户加入sudo
-```bash
-su -
-usermod -aG sudo asura
 ```
 ### Debin13 USTC sources.list
 ```bash
@@ -693,11 +690,37 @@ sudo update-initramfs -u -k all
 ```
 ### Debian安装Docker
 ```bash
-curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
-sudo systemctl enable --now docker
-# 用户加入Docker组
+sudo apt install ca-certificates curl
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+```
+```bash
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+```
+```bash
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+```
+```bash
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/debian
+Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+```
+```bash
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+```bash
+sudo systemctl status docker
+sudo systemctl enable docker
 sudo usermod -aG docker $USER
+```
 ### Debian安装chromium
+```bash
 sudo apt install chromium chromium-l10n
 ```
 # Windows系统相关
