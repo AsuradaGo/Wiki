@@ -109,7 +109,7 @@ mount --mkdir /dev/sdx1 /mnt/boot
 ```bash
 vim /etc/pacman.d/mirrorlist
 ```
->
+>> 
 Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch  
 Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch  
 Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch  
@@ -144,8 +144,8 @@ locale和hostname设置
 ```bash
 vim /etc/locale.gen
 ```
-> 
-取消注释en_US.UTF-8和zh_CN.UTF-8
+>> 
+取消注释en_US.UTF-8和zh_CN.UTF-8  
 ```bash
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 ```
@@ -166,9 +166,8 @@ EDITOR=vim visudo # 配置 sudo
 ```bash
 vim /etc/mkinitcpio.conf
 ```
-> 
+>> 
 HOOKS=(base systemd autodetect keyboard modconf block **sd-encrypt** **lvm2** filesystems fsck)  
-
 重新生成initramfs
 ```bash
 mkinitcpio -P
@@ -187,31 +186,31 @@ bootctl install
 ```bash
 vim /boot/loader/loader.conf
 ```
-> 
+>> 
 default  arch.conf  
 timeout  3  
 console-mode max  
-editor   no
+editor   no  
 ```bash
 blkid /dev/sdx2
 ```
 ```bash
 vim /boot/loader/entries/arch.conf
 ```
-> 
+>> 
 加密磁盘写法  
 title   Arch Linux  
 linux   /vmlinuz-linux  
 initrd  /intel-ucode.img  
 initrd  /initramfs-linux.img  
-options rd.luks.name=<UUID>=cryptlvm root=/dev/macvg/macroot rw
-> 
+options rd.luks.name=<UUID>=cryptlvm root=/dev/macvg/macroot rw  
+>> 
 不加密磁盘写法  
 title   Arch Linux  
 linux   /vmlinuz-linux  
 initrd  /intel-ucode.img  
 initrd  /initramfs-linux.img
-options root=UUID=<UUID> rw
+options root=UUID=<UUID> rw  
 
 启用系统服务
 ```bash
@@ -232,7 +231,7 @@ sudo systemd-cryptenroll --tpm2-device=auto /dev/sda2
 ```bash
 vim /etc/crypttab
 ```
-> 
+>> 
 找到对应 cryptlvm 的那一行（如果没有，需要手动创建它），并在其选项末尾添加 tpm2-device=auto 即:
 cryptlvm UUID=your-luks-uuid none discard
 改为：
@@ -241,9 +240,8 @@ sudo免密时间长度
 ```bash
 EDITOR=vim visudo
 ```
-> 
-Defaults env_reset,timestamp_timeout=60
-
+>> 
+Defaults env_reset,timestamp_timeout=60  
 配置/swapfile 文件
 ```bash
 sudo fallocate -l 4G /swapfile
@@ -253,9 +251,8 @@ sudo swapon /swapfile
 sudo swapon --show
 sudo nano /etc/fstab
 ```
-> 
-/swapfile none swap defaults 0 0
-
+>> 
+/swapfile none swap defaults 0 0  
 MacBookPro优化
 电源管理
 ```bash
@@ -278,15 +275,15 @@ sudo pacman -S bluedevil bluez bluez-utils
 sudo systemctl enable --now bluetooth.service
 ```
 MacBook启动项管理
-> 
+>> 
 针对于重装Linux系统之后，启动时MacBook转圈等待时间过长，此处方案对于使用systemd-boot引导  
-确定问题所在
+确定问题所在  
 ```bash
 sudo pacman -S efibootmgr
 systemd-analyze
 efibootmgr
 ```
-> 
+>> 
 查看输出里的BootOrder。如果排在前面的 BootXXXX 条目不是指向systemd-boot（通常叫 Linux Boot Manager，路径类似 \EFI\systemd\systemd-bootx64.efi），就需要把它调到第一位。
 假设systemd-boot条目是Boot0001，可以这样调整：
 sudo efibootmgr -o 0001,其他的编号...  
@@ -294,7 +291,7 @@ sudo efibootmgr -o 0001,其他的编号...
 ```bash
 sudo efibootmgr -b 0080 -B
 ```
-> 
+>> 
 efibootmgr：操作UEFI启动项的命令行工具  
 -b 0080：-b 是 --bootnum，指定要操作的启动项编号,这里 0080 就是efibootmgr输出里的Boot0080  
 -B：--delete-bootnum，删除-b指定的那个启动项  
@@ -319,18 +316,18 @@ sudo virsh net-list --all
 sudo virsh net-autostart default
 ```
 KVM虚拟机与宿主机传输文件（virtiofs）
-- 虚拟机已关闭
-- 宿主机为 Linux 系统
-  - 打开 `virt-manager`，选择目标虚拟机，点击 **"打开"** 进入详情界面--内存，勾选共享内存
-  - 点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `SharedHost`
-  - 自动挂载配置
+虚拟机已关闭  
+宿主机为 Linux 系统  
+打开 `virt-manager`，选择目标虚拟机，点击 **"打开"** 进入详情界面--内存，勾选共享内存  
+点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `SharedHost`  
+自动挂载配置  
 ```bash
 mkdir -p /ShareFolder
 vim /etc/fstab  
 ```
-> 
+>> 
 Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0  
-  - 手动挂载
+手动挂载  
 ```bash
 mkdir -p /ShareFolder  
 sudo mount -t virtiofs ShareHost ~/ShareFolder  
@@ -372,7 +369,7 @@ sudo smartctl -a /dev/sda
 ```bash
 sudo vim ~/.ssh/known_hosts
 ```
-> 
+>> 
 对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可  
 ## yay
 ```bash
@@ -449,7 +446,7 @@ ip route del default via 192.168.100.1 # 删除无效路由:
 ```bash
 sudo dmesg | tail -n 50
 ```
-> 
+>> 
 从内核日志中，过滤并高亮显示与 sda 硬盘、SATA 接口、错误（error）或失败（fail）相关的关键日志
 ```bash
 sudo dmesg | grep -i -E "sda|ata|error|fail"
