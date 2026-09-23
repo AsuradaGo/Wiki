@@ -146,6 +146,7 @@ vim /etc/locale.gen
 ```
 >> 
 取消注释en_US.UTF-8和zh_CN.UTF-8  
+
 ```bash
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 ```
@@ -168,6 +169,7 @@ vim /etc/mkinitcpio.conf
 ```
 >> 
 HOOKS=(base systemd autodetect keyboard modconf block **sd-encrypt** **lvm2** filesystems fsck)  
+
 重新生成initramfs
 ```bash
 mkinitcpio -P
@@ -191,6 +193,7 @@ default  arch.conf
 timeout  3  
 console-mode max  
 editor   no  
+
 ```bash
 blkid /dev/sdx2
 ```
@@ -204,6 +207,7 @@ linux   /vmlinuz-linux
 initrd  /intel-ucode.img  
 initrd  /initramfs-linux.img  
 options rd.luks.name=<UUID>=cryptlvm root=/dev/macvg/macroot rw  
+
 >> 
 不加密磁盘写法  
 title   Arch Linux  
@@ -236,12 +240,14 @@ vim /etc/crypttab
 cryptlvm UUID=your-luks-uuid none discard
 改为：
 cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto  
+
 sudo免密时间长度
 ```bash
 EDITOR=vim visudo
 ```
 >> 
 Defaults env_reset,timestamp_timeout=60  
+
 配置/swapfile 文件
 ```bash
 sudo fallocate -l 4G /swapfile
@@ -253,6 +259,7 @@ sudo nano /etc/fstab
 ```
 >> 
 /swapfile none swap defaults 0 0  
+
 MacBookPro优化
 电源管理
 ```bash
@@ -277,6 +284,7 @@ sudo systemctl enable --now bluetooth.service
 MacBook启动项管理
 >> 
 针对于重装Linux系统之后，启动时MacBook转圈等待时间过长，此处方案对于使用systemd-boot引导  
+
 确定问题所在  
 ```bash
 sudo pacman -S efibootmgr
@@ -287,6 +295,7 @@ efibootmgr
 查看输出里的BootOrder。如果排在前面的 BootXXXX 条目不是指向systemd-boot（通常叫 Linux Boot Manager，路径类似 \EFI\systemd\systemd-bootx64.efi），就需要把它调到第一位。
 假设systemd-boot条目是Boot0001，可以这样调整：
 sudo efibootmgr -o 0001,其他的编号...  
+
 用efibootmgr删除Boot0080
 ```bash
 sudo efibootmgr -b 0080 -B
@@ -296,6 +305,7 @@ efibootmgr：操作UEFI启动项的命令行工具
 -b 0080：-b 是 --bootnum，指定要操作的启动项编号,这里 0080 就是efibootmgr输出里的Boot0080  
 -B：--delete-bootnum，删除-b指定的那个启动项  
 整条命令的意思：删除编号为Boot0080的UEFI启动项，Boot0080是当前BootOrder里唯一指systemd-boot的条目。删掉它之后,NVRAM里就没有有效的启动项了。这时Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件  
+
 ## KVM/QEMU虚拟机
 安装KVM/QEMU
 ```bash
@@ -327,6 +337,7 @@ vim /etc/fstab
 ```
 >> 
 Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0  
+
 手动挂载  
 ```bash
 mkdir -p /ShareFolder  
@@ -371,6 +382,7 @@ sudo vim ~/.ssh/known_hosts
 ```
 >> 
 对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可  
+
 ## yay
 ```bash
 sudo pacman -S git base-devel
@@ -688,7 +700,7 @@ pkg upgrade
 ssh -i "private.Key路径:~/storage/downloads/private.key" username@Public_IP
 ```
 ### 安装xfce桌面与远程桌面
-> 安装完整的xfce桌面并默认启动后进入桌面
+安装完整的xfce桌面并默认启动后进入桌面  
 ```bash
 sudo apt install xfce4 xrdp fonts-noto-cjk
 sudo systemctl enable xrdp
@@ -696,15 +708,21 @@ sudo adduser xrdp ssl-cert
 echo "xfce4-session" > ~/.xsession
 sudo passwd debian
 ```
-> 最小化安装xfce桌面并默认启动后进入tty界面
+最小化安装xfce桌面并默认启动后进入tty界面  
 ```bash
 sudo pacman -S xfce4 xorg-xinit xorg-server
-# 创建配置文件
+```
+创建配置文件  
+```bash
 sudo vim ~/.xinitrc
-- exec startxfce4
-# 启动进入TTY界面后，如果需要登录桌面，输入：
+```
+>> exec startxfce4  
+
+启动进入TTY界面后，如果需要登录桌面，输入：
+```bash
 startx
 ```
+
 ### 设置中文语言
 ```bash
 sudo vim /etc/locale.gen
@@ -780,18 +798,6 @@ sudo usermod -aG docker $USER
 sudo apt install chromium chromium-l10n
 ```
 # Windows系统相关
-## 系统设置
-- **BIOS**: Dell 进入 F2，选择启动项 F12。
-- **设置中心**: 设置密码、个性化、高性能电源模式，关闭 U 盘自动运行。
-- **安全中心**: 关闭病毒防护、文件审查。
-- **Windows 更新**: 关闭"从其他计算机下载"。
-- **控制面板**:
-  - 系统和安全: 关闭自动磁盘优化。
-  - 电源设置: 关闭快速启动，高级设置中设置电池最小 CPU。
-- **服务**: 禁用三个 Edge 更新服务。
-- **组策略**: 关闭自动更新、系统还原、防病毒。
-- **关闭休眠**: `powercfg -h off`
-- **文件管理器**: 显示隐藏文件和后缀，修改EdgeUpdate文件夹权限。
 ## Hyper-V 管理 (PowerShell)
 ```powershell
 # 启用嵌套虚拟化
