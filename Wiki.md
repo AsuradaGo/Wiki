@@ -114,7 +114,8 @@ Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch
 Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch  
 Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch  
 Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch  
-Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch    
+Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch  
+ 
 安装基础系统
 ```bash
 pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms lvm2 cryptsetup(对于采用lvm LUKS加密方案）
@@ -140,10 +141,11 @@ ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 hwclock --systohc  
 ```
 locale和hostname设置
-取消注释en_US.UTF-8 UTF-8 和 zh_CN.UTF-8
 ```bash
 vim /etc/locale.gen
 ```
+> 
+取消注释en_US.UTF-8和zh_CN.UTF-8
 ```bash
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 ```
@@ -164,7 +166,9 @@ EDITOR=vim visudo # 配置 sudo
 ```bash
 vim /etc/mkinitcpio.conf
 ```
->> HOOKS=(base systemd autodetect keyboard modconf block **sd-encrypt** **lvm2** filesystems fsck)
+> 
+HOOKS=(base systemd autodetect keyboard modconf block **sd-encrypt** **lvm2** filesystems fsck)  
+
 重新生成initramfs
 ```bash
 mkinitcpio -P
@@ -183,7 +187,7 @@ bootctl install
 ```bash
 vim /boot/loader/loader.conf
 ```
->> 
+> 
 default  arch.conf  
 timeout  3  
 console-mode max  
@@ -194,15 +198,15 @@ blkid /dev/sdx2
 ```bash
 vim /boot/loader/entries/arch.conf
 ```
->>
-加密磁盘写法
+> 
+加密磁盘写法  
 title   Arch Linux  
 linux   /vmlinuz-linux  
 initrd  /intel-ucode.img  
 initrd  /initramfs-linux.img  
 options rd.luks.name=<UUID>=cryptlvm root=/dev/macvg/macroot rw
->>
-不加密磁盘写法
+> 
+不加密磁盘写法  
 title   Arch Linux  
 linux   /vmlinuz-linux  
 initrd  /intel-ucode.img  
@@ -228,16 +232,16 @@ sudo systemd-cryptenroll --tpm2-device=auto /dev/sda2
 ```bash
 vim /etc/crypttab
 ```
->>
+> 
 找到对应 cryptlvm 的那一行（如果没有，需要手动创建它），并在其选项末尾添加 tpm2-device=auto 即:
 cryptlvm UUID=your-luks-uuid none discard
 改为：
-cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto
+cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto  
 sudo免密时间长度
 ```bash
 EDITOR=vim visudo
 ```
->>
+> 
 Defaults env_reset,timestamp_timeout=60
 
 配置/swapfile 文件
@@ -249,7 +253,7 @@ sudo swapon /swapfile
 sudo swapon --show
 sudo nano /etc/fstab
 ```
->>
+> 
 /swapfile none swap defaults 0 0
 
 MacBookPro优化
@@ -274,23 +278,27 @@ sudo pacman -S bluedevil bluez bluez-utils
 sudo systemctl enable --now bluetooth.service
 ```
 MacBook启动项管理
-> 针对于重装Linux系统之后，启动时MacBook转圈等待时间过长，此处方案对于使用systemd-boot引导
+> 
+针对于重装Linux系统之后，启动时MacBook转圈等待时间过长，此处方案对于使用systemd-boot引导  
 确定问题所在
 ```bash
 sudo pacman -S efibootmgr
 systemd-analyze
 efibootmgr
 ```
+> 
 查看输出里的BootOrder。如果排在前面的 BootXXXX 条目不是指向systemd-boot（通常叫 Linux Boot Manager，路径类似 \EFI\systemd\systemd-bootx64.efi），就需要把它调到第一位。
 假设systemd-boot条目是Boot0001，可以这样调整：
-sudo efibootmgr -o 0001,其他的编号...
-# 用efibootmgr删除Boot0080
+sudo efibootmgr -o 0001,其他的编号...  
+用efibootmgr删除Boot0080
+```bash
 sudo efibootmgr -b 0080 -B
 ```
-  - efibootmgr：操作UEFI启动项的命令行工具
-  - -b 0080：-b 是 --bootnum，指定要操作的启动项编号。这里 0080 就是efibootmgr输出里的Boot0080
-  - -B：--delete-bootnum，删除-b指定的那个启动项
-- - 整条命令的意思：删除编号为Boot0080的UEFI启动条目,Boot0080是当前BootOrder里唯一指systemd-boot的条目。删掉它之后,NVRAM里就没有有效的启动项了。这时Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件
+> 
+efibootmgr：操作UEFI启动项的命令行工具  
+-b 0080：-b 是 --bootnum，指定要操作的启动项编号,这里 0080 就是efibootmgr输出里的Boot0080  
+-B：--delete-bootnum，删除-b指定的那个启动项  
+整条命令的意思：删除编号为Boot0080的UEFI启动项，Boot0080是当前BootOrder里唯一指systemd-boot的条目。删掉它之后,NVRAM里就没有有效的启动项了。这时Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件  
 ## KVM/QEMU虚拟机
 安装KVM/QEMU
 ```bash
@@ -302,7 +310,7 @@ sudo usermod -aG libvirt $USER
 sudo usermod -aG kvm $USER
 ```
 启动服务并设置开启自启动
-```
+```bash
 sudo systemctl enable --now libvirtd
 ```
 设置虚拟机网络自动启动
@@ -318,10 +326,10 @@ KVM虚拟机与宿主机传输文件（virtiofs）
   - 自动挂载配置
 ```bash
 mkdir -p /ShareFolder
-vim /etc/fstab
+vim /etc/fstab  
 ```
->>
-Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0
+> 
+Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0  
   - 手动挂载
 ```bash
 mkdir -p /ShareFolder  
@@ -361,10 +369,11 @@ sudo smartctl -H /dev/sda
 sudo smartctl -a /dev/sda
 ```
 ## konsole SSH连接记录
-对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可
 ```bash
 sudo vim ~/.ssh/known_hosts
 ```
+> 
+对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可  
 ## yay
 ```bash
 sudo pacman -S git base-devel
@@ -439,7 +448,10 @@ ip route del default via 192.168.100.1 # 删除无效路由:
 ## 查看系统内核/硬件日志
 ```bash
 sudo dmesg | tail -n 50
-# 从内核日志中，过滤并高亮显示与 sda 硬盘、SATA 接口、错误（error）或失败（fail）相关的关键日志
+```
+> 
+从内核日志中，过滤并高亮显示与 sda 硬盘、SATA 接口、错误（error）或失败（fail）相关的关键日志
+```bash
 sudo dmesg | grep -i -E "sda|ata|error|fail"
 ```
 ## Docker
