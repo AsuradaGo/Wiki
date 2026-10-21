@@ -240,14 +240,11 @@ vim /etc/crypttab
 cryptlvm UUID=your-luks-uuid none discard
 改为：
 cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto  
-
 sudo免密时间长度
 ```bash
 EDITOR=vim visudo
+: Defaults env_reset,timestamp_timeout=60
 ```
->> 
-Defaults env_reset,timestamp_timeout=60  
-
 配置/swapfile 文件
 ```bash
 sudo fallocate -l 4G /swapfile
@@ -255,12 +252,10 @@ sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 sudo swapon --show
-sudo nano /etc/fstab
+sudo vim /etc/fstab
+:/swapfile none swap defaults 0 0
 ```
->> 
-/swapfile none swap defaults 0 0  
-
-MacBookPro优化
+## MacBookPro优化
 电源管理
 ```bash
 sudo pacman -S tlp tlp-rdw
@@ -284,7 +279,6 @@ sudo systemctl enable --now bluetooth.service
 MacBook启动项管理
 >> 
 针对于重装Linux系统之后，启动时MacBook转圈等待时间过长，此处方案对于使用systemd-boot引导  
-
 确定问题所在  
 ```bash
 sudo pacman -S efibootmgr
@@ -295,7 +289,6 @@ efibootmgr
 查看输出里的BootOrder。如果排在前面的 BootXXXX 条目不是指向systemd-boot（通常叫 Linux Boot Manager，路径类似 \EFI\systemd\systemd-bootx64.efi），就需要把它调到第一位。
 假设systemd-boot条目是Boot0001，可以这样调整：
 sudo efibootmgr -o 0001,其他的编号...  
-
 用efibootmgr删除Boot0080
 ```bash
 sudo efibootmgr -b 0080 -B
@@ -304,85 +297,40 @@ sudo efibootmgr -b 0080 -B
 efibootmgr：操作UEFI启动项的命令行工具  
 -b 0080：-b 是 --bootnum，指定要操作的启动项编号,这里 0080 就是efibootmgr输出里的Boot0080  
 -B：--delete-bootnum，删除-b指定的那个启动项  
-整条命令的意思：删除编号为Boot0080的UEFI启动项，Boot0080是当前BootOrder里唯一指systemd-boot的条目。删掉它之后,NVRAM里就没有有效的启动项了。这时Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件  
-
-## KVM/QEMU虚拟机
-安装KVM/QEMU
-```bash
-sudo pacman -S qemu-desktop virt-manager virt-viewer libvirt edk2-ovmf dnsmasq
+整条命令的意思：删除编号为Boot0080的UEFI启动项，Boot0080是当前BootOrder里唯一指systemd-boot的条目。删掉它之后,NVRAM里就没有有效的启动项了。这时Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件
+## 补充对 exfat/fat32 支持
 ```
-加入用户组
-```bash
-sudo usermod -aG libvirt $USER
-sudo usermod -aG kvm $USER
+sudo pacman -S dosfstools
+sudo pacman -S exfatprogs
 ```
-启动服务并设置开启自启动
-```bash
-sudo systemctl enable --now libvirtd
+## VLC播放器
 ```
-设置虚拟机网络自动启动
-```bash
-sudo virsh net-list --all
-sudo virsh net-autostart default
+sudo pacman -S vlc
 ```
-KVM虚拟机与宿主机传输文件（virtiofs）
-虚拟机已关闭  
-宿主机为 Linux 系统  
-打开 `virt-manager`，选择目标虚拟机，点击 **"打开"** 进入详情界面--内存，勾选共享内存  
-点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `SharedHost`  
-自动挂载配置  
-```bash
-mkdir -p /ShareFolder
-vim /etc/fstab  
+## FileZilla
 ```
->> 
-Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0  
-
-手动挂载  
-```bash
-mkdir -p /ShareFolder  
-sudo mount -t virtiofs ShareHost ~/ShareFolder  
+sudo pacman -S filezilla
 ```
-## 磁盘操作
-清除磁盘分区和数据
-```bash
-wipefs -a /dev/sda
-blkdiscard /dev/sda
-待补充完善
+## 截图工具
 ```
-加密设备挂载/卸载
-挂载设备
-```bash
-mkdir -p ~/mount
-sudo cryptsetup luksOpen /dev/sdx sdcard
-sudo mount /dev/mapper/sdcard ~/mount
+sudo pacman -S spectacle tesseract-data-chi_sim tesseract-data-eng
 ```
-卸载设备
-```bash
-sudo umount ~/mount
-sudo cryptsetup luksClose sdcard
+## kate
 ```
-权限设置
-```bash
-sudo chown -R username:username ~/TestFolder
+sudo pacman -S kate
 ```
-断开设备电源
-```bash
-sudo udisksctl power-off -b /dev/sdx
+## 系统信息显示
 ```
-smartctl查看磁盘健康状态
-```bash
-sudo pacman -S smar?tool
-sudo smartctl -H /dev/sda
-sudo smartctl -a /dev/sda
+sudo pacman -S plasma-systemmonitor
 ```
-## konsole SSH连接记录
-```bash
-sudo vim ~/.ssh/known_hosts
+## rsync
 ```
->> 
-对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可  
-
+sudo pacman -S rsync
+```
+## Remmina远程桌面客户端
+```
+sudo pacman -S remmina
+```
 ## yay
 ```bash
 sudo pacman -S git base-devel
@@ -445,23 +393,40 @@ aircrack-ng xxx.cap -w 字典路径 # 字典破解
 sudo iw dev wls35u1mon set type managed # 停止监听模式 (推荐)
 sudo airmon-ng stop wls35u1mon # 不推荐，遇到网卡、内核和桌面崩溃
 ```
-## 手机 USB 共享网络
+## KVM/QEMU虚拟机
+安装KVM/QEMU
 ```bash
-ip a                     # 查看设备接口
-ip link set <接口名> up   # 启用接口
-dhcpcd <接口名>           # 通过 DHCP 获取地址
-ping debian.org -c 3     # 验证网络
-ip route show            # 查看路由
-ip route del default via 192.168.100.1 # 删除无效路由:
+sudo pacman -S qemu-desktop virt-manager libvirt edk2-ovmf dnsmasq
 ```
-## 查看系统内核/硬件日志
+加入用户组
 ```bash
-sudo dmesg | tail -n 50
+sudo usermod -aG libvirt $USER
+sudo usermod -aG kvm $USER
 ```
->> 
-从内核日志中，过滤并高亮显示与 sda 硬盘、SATA 接口、错误（error）或失败（fail）相关的关键日志
+启动服务并设置开启自启动
 ```bash
-sudo dmesg | grep -i -E "sda|ata|error|fail"
+sudo systemctl enable --now libvirtd
+```
+设置虚拟机网络自动启动
+```bash
+sudo virsh net-list --all
+sudo virsh net-autostart default
+```
+虚拟机与宿主机传输文件（virtiofs）
+虚拟机已关闭  
+宿主机为 Linux 系统  
+打开 `virt-manager`，选择目标虚拟机，点击 **"打开"** 进入详情界面--内存，勾选共享内存  
+点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `SharedHost`  
+自动挂载配置  
+```bash
+mkdir -p /ShareFolder
+vim /etc/fstab
+:Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0
+```
+手动挂载  
+```bash
+mkdir -p /ShareFolder  
+sudo mount -t virtiofs ShareHost ~/ShareFolder  
 ```
 ## Docker
 ### Docker 安装
@@ -688,8 +653,85 @@ CREATE INDEX idx_phone ON   table_2026("phone");
 CREATE INDEX idx_uid ON table_2026("uid");  
 # 查询: SELECT * FROM table_2026 WHERE "phone" = 'Your Phone';
 ```
-## Debian On Oracle&KVM/QEMU
-### SSH 连接
+## 磁盘操作
+清除磁盘分区和数据
+```bash
+wipefs -a /dev/sda
+blkdiscard /dev/sda
+待补充完善
+```
+加密设备挂载/卸载
+挂载设备
+```bash
+mkdir -p ~/mount
+sudo cryptsetup luksOpen /dev/sdx sdcard
+sudo mount /dev/mapper/sdcard ~/mount
+```
+卸载设备
+```bash
+sudo umount ~/mount
+sudo cryptsetup luksClose sdcard
+```
+权限设置
+```bash
+sudo chown -R username:username ~/TestFolder
+```
+断开设备电源
+```bash
+sudo udisksctl power-off -b /dev/sdx
+```
+U盘格式化为exfat格式
+```
+sudo wipefs -a /dev/sdc
+sudo parted /dev/sdc --script -- mklabel msdos
+sudo parted /dev/sdc --script -- mkpart primary ntfs 1MiB 100%
+sudo mkfs.exfat -n "SDCard" /dev/sdc1
+```
+smartctl查看磁盘健康状态
+```bash
+sudo pacman -S smar?tool
+sudo smartctl -H /dev/sda
+sudo smartctl -a /dev/sda
+```
+## konsole SSH连接记录
+```bash
+sudo vim ~/.ssh/known_hosts
+```
+>> 
+对于已保存的SSH连接，如果连接的目标主机经过重装系统后连接不上，只需要删除该文件中对应的主机条目即可  
+## 手机 USB 共享网络
+```bash
+ip a                     # 查看设备接口
+ip link set <接口名> up   # 启用接口
+dhcpcd <接口名>           # 通过 DHCP 获取地址
+ping debian.org -c 3     # 验证网络
+ip route show            # 查看路由
+ip route del default via 192.168.100.1 # 删除无效路由:
+```
+## 查看系统内核/硬件日志
+```bash
+sudo dmesg | tail -n 50
+```
+>> 
+从内核日志中，过滤并高亮显示与 sda 硬盘、SATA 接口、错误（error）或失败（fail）相关的关键日志
+```bash
+sudo dmesg | grep -i -E "sda|ata|error|fail"
+```
+## 配置TPM自动解锁
+```bash
+# 确定加密分区
+sudo lsblk -f
+# 清除旧信息
+sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/sda3
+# 安装clevis组件
+sudo apt install clevis clevis-tpm2 clevis-luks clevis-initramfs
+# 执行绑定
+sudo clevis luks bind -d /dev/sda3 tpm2 '{"pcr_ids":"7"}'
+# 更新 initramfs
+sudo update-initramfs -u -k all
+```
+# Debian On Oracle&KVM/QEMU
+## SSH 连接
 ```bash
 # 通用连接
 ssh -i ~/private.key username@Public_IP
@@ -699,7 +741,7 @@ termux-setup-storage
 pkg upgrade
 ssh -i "private.Key路径:~/storage/downloads/private.key" username@Public_IP
 ```
-### 安装xfce桌面与远程桌面
+## 安装xfce桌面与远程桌面
 安装完整的xfce桌面并默认启动后进入桌面  
 ```bash
 sudo apt install xfce4 xrdp fonts-noto-cjk
@@ -722,19 +764,18 @@ sudo vim ~/.xinitrc
 ```bash
 startx
 ```
-
-### 设置中文语言
+## 设置中文语言
 ```bash
 sudo vim /etc/locale.gen
 # 取消注释 en_US.UTF-8 和 zh_CN.UTF-8
 sudo locale-gen
 sudo update-locale LANG=zh_CN.UTF-8
 ```
-### Fcitx5
+## Fcitx5
 ```bash
 sudo apt install fcitx5 fcitx5-chinese-addons fcitx5-frontend-gtk3 fcitx5-frontend-qt5 fcitx5-config-qt
 ```
-### Debin13 USTC sources.list
+## Debin13 USTC sources.list
 ```bash
 sudo nano /etc/apt/sources.list
 # USTC
@@ -749,20 +790,7 @@ deb http://mirrors.ustc.edu.cn/debian trixie-updates main contrib non-free non-f
 deb http://mirrors.ustc.edu.cn/debian-security/ trixie-security main contrib non-free non-free-firmware
 # deb-src http://mirrors.ustc.edu.cn/debian-security/ trixie-security main contrib non-free non-free-firmware
 ```
-### 配置TPM自动解锁
-```bash
-# 确定加密分区
-sudo lsblk -f
-# 清除旧信息
-sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/sda3
-# 安装clevis组件
-sudo apt install clevis clevis-tpm2 clevis-luks clevis-initramfs
-# 执行绑定
-sudo clevis luks bind -d /dev/sda3 tpm2 '{"pcr_ids":"7"}'
-# 更新 initramfs
-sudo update-initramfs -u -k all
-```
-### Debian安装Docker
+## Debian安装Docker
 ```bash
 sudo apt install ca-certificates curl
 ```bash
@@ -793,7 +821,7 @@ sudo systemctl status docker
 sudo systemctl enable docker
 sudo usermod -aG docker $USER
 ```
-### Debian安装chromium
+## Debian安装chromium
 ```bash
 sudo apt install chromium chromium-l10n
 ```
