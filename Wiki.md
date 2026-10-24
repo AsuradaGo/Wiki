@@ -66,7 +66,7 @@ timedatectl
 硬盘分区
 ```bash
 # 不加密分区方案
-gdisk /dev/sdx
+gdisk /dev/sda
 # 输入: x (进入专家模式)
 # 输入: z (清空所有分区表)
 # 输入: o (创建 GPT 分区格式)
@@ -75,16 +75,16 @@ gdisk /dev/sdx
 # 输入: p (查看分区情况)
 # 输入: w (写入磁盘更改)
 # 格式化分区
-mkfs.fat -F 32 /dev/sdx1  # EFI 分区
-mkfs.ext4 /dev/sdx2       # 系统根分区
+mkfs.fat -F 32 /dev/sda1  # EFI 分区
+mkfs.ext4 /dev/sda2       # 系统根分区
 # 挂载分区
-mount /dev/sdx2 /mnt
-mount --mkdir /dev/sdx1 /mnt/boot
+mount /dev/sda2 /mnt
+mount --mkdir /dev/sda1 /mnt/boot
 ```
 ```bash
 # 加密分区方案
 lsblk
-gdisk /dev/sdx
+gdisk /dev/sda
 # 输入: x (进入专家模式)
 # 输入: z (清空所有分区表)
 # 输入: o (创建 GPT 分区格式)
@@ -92,38 +92,34 @@ gdisk /dev/sdx
 # 输入: n (余下所有空间 hex code 8309）
 # 输入: w (写入磁盘更改)
 # 格式化LUKS分区
-cryptsetup luksFormat /dev/sdx2
+cryptsetup luksFormat /dev/sda2
 # 打开LUKS
-cryptsetup open /dev/sdx2 cryptlvm
-# 设置lvm
-pvcreate /dev/mapper/cryptlvm
-vgcreate macvg /dev/mapper/cryptlvm
-lvcreate -l 100%FREE macvg -n macroot
+cryptsetup open /dev/sda2 root
 # 格式化并挂载分区
-mkfs.fat -F 32 /dev/sdx1
-mkfs.ext4 /dev/macvg/macroot
-mount /dev/macvg/macroot /mnt
-mount --mkdir /dev/sdx1 /mnt/boot
+mkfs.fat -F 32 /dev/sda1
+mkfs.ext4 /dev/mapper/root
+mount /dev/mapper/root /mnt
+mount --mkdir /dev/sda1 /mnt/boot
 ```
 配置镜像源
 ```bash
 vim /etc/pacman.d/mirrorlist
-```
->> 
+:
 Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch  
 Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/$repo/os/$arch  
 Server = https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch  
 Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch  
 Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch  
- 
+ ```
 安装基础系统
 ```bash
-pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms lvm2 cryptsetup(对于采用lvm LUKS加密方案）
+pacstrap -K /mnt base linux linux-firmware linux-headers intel-ucode git base-devel dkms cryptsetup
 ```
 生成 fstab 文件
 ```bash
 genfstab -U /mnt > /mnt/etc/fstab
-cat /mnt/etc/fstab  # 检查fstab文件
+# 检查fstab文件
+cat /mnt/etc/fstab
 ```
 chroot进入新系统
 ```bash
@@ -143,10 +139,8 @@ hwclock --systohc
 locale和hostname设置
 ```bash
 vim /etc/locale.gen
+:取消注释en_US.UTF-8和zh_CN.UTF-8  
 ```
->> 
-取消注释en_US.UTF-8和zh_CN.UTF-8  
-
 ```bash
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 ```
@@ -166,86 +160,62 @@ EDITOR=vim visudo # 配置 sudo
 配置 mkinitcpio.conf（如采用磁盘加密方案）
 ```bash
 vim /etc/mkinitcpio.conf
+:
+HOOKS=(base systemd autodetect keyboard modconf block **sd-encrypt** filesystems fsck)  
 ```
->> 
-HOOKS=(base systemd autodetect keyboard modconf block **sd-encrypt** **lvm2** filesystems fsck)  
-
 重新生成initramfs
 ```bash
 mkinitcpio -P
 ```
 配置引导
-不加密磁盘方案采用GRUB引导
-```bash
-pacman -S grub efibootmgr
-grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-grub-mkconfig -o /boot/grub/grub.cfg
-```
-加密磁盘方案采用systemd-boot引导
+systemd-boot引导
 ```bash
 bootctl install
 ```
 ```bash
 vim /boot/loader/loader.conf
-```
->> 
+:
 default  arch.conf  
 timeout  3  
 console-mode max  
 editor   no  
-
+```
 ```bash
 blkid /dev/sdx2
 ```
 ```bash
 vim /boot/loader/entries/arch.conf
-```
->> 
+:
 加密磁盘写法  
 title   Arch Linux  
 linux   /vmlinuz-linux  
 initrd  /intel-ucode.img  
 initrd  /initramfs-linux.img  
-options rd.luks.name=<UUID>=cryptlvm root=/dev/macvg/macroot rw  
+options rd.luks.name=<UUID>=root root=/dev/mapper/root rw
 
->> 
 不加密磁盘写法  
 title   Arch Linux  
 linux   /vmlinuz-linux  
 initrd  /intel-ucode.img  
 initrd  /initramfs-linux.img
 options root=UUID=<UUID> rw  
-
+```
 启用系统服务
 ```bash
 systemctl enable plasmalogin
-```
-```bash
 systemctl enable NetworkManager
 ```
 退出并卸载分区
 ```bash
 exit
 umount -R /mnt
-```
-TPM自动解锁
-```bash
-sudo systemd-cryptenroll --tpm2-device=auto /dev/sda2
-```
-```bash
-vim /etc/crypttab
-```
->> 
-找到对应 cryptlvm 的那一行（如果没有，需要手动创建它），并在其选项末尾添加 tpm2-device=auto 即:
-cryptlvm UUID=your-luks-uuid none discard
-改为：
-cryptlvm UUID=your-luks-uuid none discard,tpm2-device=auto  
-sudo免密时间长度
+```  
+## sudo免密时间长度
 ```bash
 EDITOR=vim visudo
-: Defaults env_reset,timestamp_timeout=60
+:Defaults env_reset,timestamp_timeout=60
 ```
-配置/swapfile 文件
+## 配置/swapfile 文件
 ```bash
 sudo fallocate -l 4G /swapfile
 sudo chmod 600 /swapfile
@@ -265,9 +235,7 @@ sudo systemctl enable --now mbpfan
 ```
 声卡
 ```bash
-sudo pacman -S alsa-utils
-sudo pacman -S pipewire-pulse pipewire-alsa
-sudo pacman -S plasma-pa
+sudo pacman -S alsa-utils pipewire-pulse pipewire-alsa plasma-pa
 systemctl --user enable --now pipewire-pulse.service
 alsamixer
 ```
@@ -276,28 +244,6 @@ alsamixer
 sudo pacman -S bluedevil bluez bluez-utils
 sudo systemctl enable --now bluetooth.service
 ```
-MacBook启动项管理
->> 
-针对于重装Linux系统之后，启动时MacBook转圈等待时间过长，此处方案对于使用systemd-boot引导  
-确定问题所在  
-```bash
-sudo pacman -S efibootmgr
-systemd-analyze
-efibootmgr
-```
->> 
-查看输出里的BootOrder。如果排在前面的 BootXXXX 条目不是指向systemd-boot（通常叫 Linux Boot Manager，路径类似 \EFI\systemd\systemd-bootx64.efi），就需要把它调到第一位。
-假设systemd-boot条目是Boot0001，可以这样调整：
-sudo efibootmgr -o 0001,其他的编号...  
-用efibootmgr删除Boot0080
-```bash
-sudo efibootmgr -b 0080 -B
-```
->> 
-efibootmgr：操作UEFI启动项的命令行工具  
--b 0080：-b 是 --bootnum，指定要操作的启动项编号,这里 0080 就是efibootmgr输出里的Boot0080  
--B：--delete-bootnum，删除-b指定的那个启动项  
-整条命令的意思：删除编号为Boot0080的UEFI启动项，Boot0080是当前BootOrder里唯一指systemd-boot的条目。删掉它之后,NVRAM里就没有有效的启动项了。这时Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件
 ## 补充对 exfat/fat32 支持
 ```
 sudo pacman -S dosfstools
@@ -331,12 +277,12 @@ sudo pacman -S rsync
 ```
 sudo pacman -S remmina
 ```
-## yay
+## paru
 ```bash
 sudo pacman -S git base-devel
 cd ~
-git clone https://aur.archlinux.org/yay-bin.git
-cd yay-bin
+git clone https://aur.archlinux.org/paru.git
+cd paru
 makepkg -si
 ```
 ## Fcitx5输入法
@@ -345,7 +291,7 @@ sudo pacman -S fcitx5 fcitx5-configtool fcitx5-chinese-addons fcitx5-gtk fcitx5-
 ```
 ## Google Chrome
 ```bash
-yay -S google-chrome
+paru google-chrome
 ```
 ## Chromium
 ```bash
@@ -397,18 +343,12 @@ sudo airmon-ng stop wls35u1mon # 不推荐，遇到网卡、内核和桌面崩�
 安装KVM/QEMU
 ```bash
 sudo pacman -S qemu-desktop virt-manager libvirt edk2-ovmf dnsmasq
-```
 加入用户组
-```bash
 sudo usermod -aG libvirt $USER
 sudo usermod -aG kvm $USER
-```
 启动服务并设置开启自启动
-```bash
 sudo systemctl enable --now libvirtd
-```
 设置虚拟机网络自动启动
-```bash
 sudo virsh net-list --all
 sudo virsh net-autostart default
 ```
@@ -419,14 +359,14 @@ sudo virsh net-autostart default
 点击左下角的 **"添加硬件"**，选择 **"文件系统"**，**驱动程序** 选择 `virtiofs`，**源路径** 点击 **"浏览"**，选择宿主机上要共享的文件夹，**目标路径** 填入一个挂载标签，例如 `SharedHost`  
 自动挂载配置  
 ```bash
-mkdir -p /ShareFolder
+mkdir -p /virtiofs
 vim /etc/fstab
-:Virtiofs /mnt/sharefolder  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0
+:Virtiofs /mnt/virtiofs  virtiofs  rw,noatime,nofail,x-systemd.automount 0 0
 ```
 手动挂载  
 ```bash
-mkdir -p /ShareFolder  
-sudo mount -t virtiofs ShareHost ~/ShareFolder  
+mkdir -p /virtiofsGuest
+sudo mount -t virtiofs VirtiofsHost ~/VirtiofsGuest 
 ```
 ## Docker
 ### Docker 安装
@@ -730,6 +670,21 @@ sudo clevis luks bind -d /dev/sda3 tpm2 '{"pcr_ids":"7"}'
 # 更新 initramfs
 sudo update-initramfs -u -k all
 ```
+## MacBook启动项管理
+重装Linux系统之后，启动时MacBook转圈等待时间过长，此处方案对于使用systemd-boot引导   
+```bash
+sudo pacman -S efibootmgr
+systemd-analyze
+efibootmgr
+:查看输出里的BootOrder。如果排在前面的 BootXXXX 条目不是指向systemd-boot（通常叫 Linux Boot Manager，路径类似 \EFI\systemd\systemd-bootx64.efi），就需要把它调到第一位。
+假设systemd-boot条目是Boot0001，可以调整：
+sudo efibootmgr -o 0001,其他的编号...  
+用efibootmgr删除Boot0080
+sudo efibootmgr -b 0080 -B
+efibootmgr：操作UEFI启动项的命令行工具  
+-b 0080：-b 是 --bootnum，指定要操作的启动项编号,这里 0080 就是efibootmgr输出里的Boot0080  
+-B：--delete-bootnum，删除-b指定的那个启动项  
+整条命令的意思：删除编号为Boot0080的UEFI启动项，Boot0080是当前BootOrder里唯一指systemd-boot的条目。删掉它之后,NVRAM里就没有有效的启动项了。这时Mac 固件会回退到默认的后备路径\EFI\BOOT\BOOTX64.EFI去寻找可启动文件
 # Debian On Oracle&KVM/QEMU
 ## SSH 连接
 ```bash
