@@ -325,6 +325,21 @@ yay wireshark
 ```bash
 sudo pacman -S nmap
 ```
+## qbittorrent
+```
+sudo pacman -S qbittorrent
+```
+## samba
+```
+sudo pacman -Syu
+sudo pacman -S samba
+sudo vim /etc/samba/smb.conf
+sudo systemctl enable --now smb
+sudo smbpasswd -a asurada
+ip addr show
+# 虚拟机操作
+文件管理器访问：\\ip-addr\
+```
 ## Aircrack-NG
 ```bash
 yay -S aircrack-ng
